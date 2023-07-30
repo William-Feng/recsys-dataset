@@ -168,10 +168,6 @@ final_preds.to_csv('.././predictions.csv', index=False)
 final_preds.to_csv('.././submission.csv', index=False)
 
 # Checking score:
-## To check the predictions against generated test labels/Ground Truths,
-## see the 'Running models and calculating score' section in README.md
-## To check the score in submission.csv against the Kaggle competition, either:
-### Manually upload your submission to the official competition page 
-### OR Run the below command:
-### `kaggle competitions submit -c otto-recommender-system -f submission.csv -m "Message"`
-### Reference Kaggle API documentation: https://github.com/Kaggle/kaggle-api
+## To check the predictions against generated test labels/Ground Truths OR 
+## against the Kaggle competition
+## See the 'Running models and calculating score' section in README.md
