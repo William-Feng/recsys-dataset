@@ -1,6 +1,8 @@
 # COMP9417 Group Project
 # Ensembling models
 # Authored 31/07/23
+# TODO: Store the model predictions in a directory called ensemble-submissions off the root directory
+# See line 60
 
 import polars as pl
 
@@ -55,8 +57,7 @@ def perform_ensemble(model_predictions):
     # Casting the numbers to improve speed
     final_predictions = final_predictions.with_columns(pl.col('labels').cast(pl.List(pl.Utf8)).list.join(' '))
     return final_predictions
-
-# Store the prediction filepaths
+# TODO: Replace the prediction/submission filepaths 
 prediction_fps = ['./../../ensemble-submissions/w2v_predictions.csv', './../../ensemble-submissions/xgb_predictions.csv',
          './../../ensemble-submissions/covis_predictions.csv']
 # Applying greater weights to better models 
