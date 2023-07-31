@@ -57,8 +57,8 @@ def perform_ensemble(model_predictions):
     return final_predictions
 
 # Store the prediction filepaths
-prediction_fps = ['./../ensemble-submissions/w2v_predictions.csv', './../ensemble-submissions/xgb_predictions.csv',
-         './../ensemble-submissions/covis_predictions.csv']
+prediction_fps = ['./../../ensemble-submissions/w2v_predictions.csv', './../../ensemble-submissions/xgb_predictions.csv',
+         './../../ensemble-submissions/covis_predictions.csv']
 # Applying greater weights to better models 
 model_predictions = [read_sub(fp, weight_val) for fp, weight_val in zip(prediction_fps, [0.2, 0.3, 0.5])]
 # Perform the voter ensemble method
