@@ -4,15 +4,13 @@ import itertools
 import numpy as np
 
 import pandas as pd
-from utils import (
-    BUY_TO_BUY_COVIS_FILE_PREFIX,
-    CARTS_TO_ORDERS_COVIS_FILE_PREFIX,
-    CLICKS_COVIS_FILE_PREFIX,
+from .utils import (
     PREDICTIONS_OUTPUT_PATH,
     TEST_PATH,
     TOP_N,
     TYPE_LABELS,
     TYPE_WEIGHT,
+    get_covis_matrices_dict,
 )
 
 NUM_SECTION = 4
@@ -33,19 +31,6 @@ def load_test():
         chunk["type"] = chunk["type"].map(TYPE_LABELS).astype("int8")
         dataframes.append(chunk)
     return pd.concat(dataframes).reset_index(drop=True)
-
-
-def pqt_to_dict(dataframe):
-    """
-    Convert DataFrame to nested dictionary based on groupby.
-
-    Args:
-    dataframe (pandas.DataFrame): Input DataFrame with 'aid_x' and 'aid_y' columns.
-
-    Returns:
-    dict: Nested dictionary with 'aid_x' values as keys and lists of corresponding 'aid_y' values as values.
-    """
-    return dataframe.groupby("aid_x").aid_y.apply(list).to_dict()
 
 
 def suggest_clicks(dataframe, clicks_covis, top_clicks):
@@ -151,7 +136,6 @@ def suggest_buys(dataframe, buy_to_buy_covis, carts_to_orders_covis, top_orders)
     result = unique_aids + top_aids2[: TOP_N - len(unique_aids)]
     return result + list(top_orders)[: TOP_N - len(result)]
 
-
 def rerank():
     """
     Rerank test data using co-visitation matrices and generate prediction output.
@@ -170,23 +154,10 @@ def rerank():
     """
     test_dataframe = load_test()
 
-    clicks_covis = pqt_to_dict(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt"))
-    for k in range(1, NUM_SECTION):
-        clicks_covis.update(
-            pqt_to_dict(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
-        )
-
-    carts_to_orders_covis = pqt_to_dict(
-        pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_0.pqt")
-    )
-    for k in range(1, NUM_SECTION):
-        carts_to_orders_covis.update(
-            pqt_to_dict(pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
-        )
-
-    buy_to_buy_covis = pqt_to_dict(
-        pd.read_parquet(f"{BUY_TO_BUY_COVIS_FILE_PREFIX}_0.pqt")
-    )
+    matrices = get_covis_matrices_dict()
+    clicks_covis = matrices['click_covis']
+    carts_to_orders_covis = matrices['carts_to_orders_covis']
+    buy_to_buy_covis = matrices['buy_to_buy_covis']
 
     top_clicks = (
         test_dataframe.loc[test_dataframe["type"] == "clicks", "aid"]
