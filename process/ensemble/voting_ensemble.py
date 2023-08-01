@@ -5,6 +5,7 @@ Note that since this performed poorly, it was not used at all for the submission
 The best submission came from weighted_ensemble.py.
 """
 
+
 import polars as pl
 
 
@@ -25,6 +26,7 @@ def read_submission(fp, weight):
     Returns:
         dataframe (polars): A DataFrame that includes the submission's 'aid' (article ID) values and associated weights.
     """
+
     return (
         pl.read_csv(fp)
         .with_columns(pl.col('labels').str.split(by=' ')).with_columns(pl.lit(weight).alias('v'))
@@ -44,6 +46,7 @@ def perform_ensemble(model_predictions):
     Returns:
         final_predictions (df): A DataFrame containing the final ensemble predictions.
     """
+
     model_predictions = model_predictions[0].join(model_predictions[1],
                                                   how='outer',
                                                   on=['session_type',
@@ -74,6 +77,7 @@ def main():
     these prediction files and performs the ensemble operation on them. The final ensemble
     predictions are written to a csv file.
     """
+
     prediction_fps = [f'{PATH}/w2v_predictions.csv', f'{PATH}/xgb_predictions.csv',
                       f'{PATH}/covis_predictions.csv']
     model_predictions = [read_submission(fp, weight_val)
