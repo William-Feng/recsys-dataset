@@ -1,3 +1,8 @@
+"""
+This module is used for stage one in generating the Covisitation Matrices.
+"""
+
+
 import pandas as pd
 import gc
 

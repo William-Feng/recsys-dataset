@@ -1,3 +1,8 @@
+"""
+This module is for generating the features for the XGBoost model.
+"""
+
+
 import polars as pl
 
 

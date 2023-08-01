@@ -1,5 +1,11 @@
-import pandas as pd, numpy as np
-import glob, gc
+"""
+This module is used to provide helper functions for the LGBM model.
+"""
+
+
+import pandas as pd
+import numpy as np
+import glob
 
 
 TRAIN_PATH = "../../test/resources/train_parquet/*"

@@ -1,11 +1,17 @@
+"""
+This module is used to run the Covisitation Matrices on the dataset.
+"""
+
+
 from covis_matrices import generate_covis_matrices
 from rerank import rerank
 
 
 if __name__ == "__main__":
-    # stage 1:
-    # ensure covis matrices are already generated and located in the appropriate location before this
+    # Ensure covisitation matrices are already generated and located in the appropriate location
+
+    # Stage 1:
     generate_covis_matrices()
 
-    # stage 2:
+    # Stage 2:
     rerank()
