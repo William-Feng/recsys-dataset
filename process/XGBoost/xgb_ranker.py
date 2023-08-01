@@ -1,3 +1,8 @@
+"""
+This module is used to run the XGBoost (eXtreme Gradient Boosting) Ranker model on the dataset.
+"""
+
+
 import matplotlib.pyplot as plt
 from merlin.core.utils import Distributed
 from merlin.models.xgb import XGBoost
@@ -17,7 +22,16 @@ TYPE_LABELS = {"clicks": 0, "carts": 1, "orders": 2}
 
 
 def preprocess_data(df, transformations):
-    """Apply a list of transformations to a DataFrame (using the functions from helpers.py)."""
+    """
+    Apply a list of transformations to a DataFrame (using the functions from helpers.py).
+
+    Params:
+        df (polars.DataFrame): Input DataFrame.
+        transformations (list): List of transformations (functions) to apply.
+
+    Returns:
+        df (polars.DataFrame): Transformed DataFrame.
+    """
 
     for transform in transformations:
         df = transform(df)
@@ -25,7 +39,16 @@ def preprocess_data(df, transformations):
 
 
 def load_and_preprocess_data(pipeline):
-    """Load and preprocess train and label data."""
+    """
+    Load and preprocess training and label data.
+
+    Params:
+        pipeline (list): List of preprocessing functions to be applied.
+
+    Returns:
+        train_data (polars.DataFrame): Preprocessed training data.
+        train_labels (polars.DataFrame): Training labels.
+    """
 
     train_data = pl.read_parquet(TRAIN_PATH)
     train_labels = pl.read_parquet(TRAIN_LABELS_PATH)
@@ -35,7 +58,15 @@ def load_and_preprocess_data(pipeline):
 
 
 def convert_labels(df):
-    """Converts the labels to appropriate format."""
+    """
+    Converts the labels to the appropriate format.
+
+    Params:
+        df (polars.DataFrame): DataFrame containing labels.
+
+    Returns:
+        df (polars.DataFrame): DataFrame with converted labels.
+    """
 
     df = df.explode('ground_truth').with_columns([
         pl.col('ground_truth').alias('aid'),
@@ -52,7 +83,17 @@ def convert_labels(df):
 
 
 def build_model(train, labels):
-    """Train the model on the given train data and labels using XGBoost with 3 different objectives."""
+    """
+    Train the XGBoost Ranker model on the given train data and labels with 3 different objectives.
+
+    Params:
+        train (polars.DataFrame): Preprocessed training data.
+        labels (polars.DataFrame): Training labels.
+
+    Returns:
+        rankers (list): List of trained XGBoost Ranker models.
+        wf (nvtabular.Workflow): Preprocessing workflow.
+    """
 
     train_labels = convert_labels(labels)
 
@@ -82,7 +123,12 @@ def build_model(train, labels):
 
 
 def plot_feature_importance(ranker):
-    """Plot feature importance of the trained model."""
+    """
+    Plot the feature importance of the trained model.
+
+    Params:
+        ranker (merlin.models.xgb.XGBoost): Trained XGBoost model.
+    """
 
     ranker.booster.save_model('xgb_model.json')
     bst = xgb.Booster()
@@ -95,7 +141,18 @@ def plot_feature_importance(ranker):
 
 
 def make_predictions(rankers, wf, pipeline, weights):
-    """Make predictions on test data using the weighted model."""
+    """
+    Make predictions on test data using the weighted model.
+
+    Params:
+        rankers (list): List of trained XGBoost Ranker models.
+        wf (nvtabular.Workflow): Preprocessing workflow.
+        pipeline (list): List of preprocessing functions to be applied.
+        weights (list): List of weights for the models.
+
+    Returns:
+        test_predictions (polars.DataFrame): DataFrame containing predictions.
+    """
 
     test_data = pl.read_parquet(TEST_PATH)
     test_data = preprocess_data(test_data, pipeline)
@@ -124,7 +181,13 @@ def make_predictions(rankers, wf, pipeline, weights):
 
 
 def create_submission_file(test_predictions, weights):
-    """Create a submission file for all weights from the test predictions and ensure they're in the correct format."""
+    """
+    Create a submission file from the test predictions and ensure they're in the correct format.
+
+    Params:
+        test_predictions (polars.DataFrame): DataFrame containing predictions.
+        weights (list): List of weights for the models.
+    """
 
     session_types = []
     labels = []
@@ -161,7 +224,12 @@ def create_submission_file(test_predictions, weights):
 
 
 def get_weights():
-    """Get all possible weights for the 3 rankers (ensure that the total sum is 1)."""
+    """
+    Get all possible weights for the 3 rankers (ensure that the total sum is 1).
+
+    Returns:
+        weights_list (list): List of all possible weight combinations for the rankers.
+    """
 
     step = 0.1
     weights_list = []
@@ -177,7 +245,11 @@ def get_weights():
 
 
 def main():
-    """Main function to run the model and determine the best weights."""
+    """
+    Main function to run the model and determine the best weights.
+
+    Loads and preprocesses data, trains models, generates predictions, and creates submission files.
+    """
 
     pipeline = helpers.get_pipeline()
     train_data, train_labels = load_and_preprocess_data(pipeline)

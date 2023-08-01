@@ -1,8 +1,7 @@
-# Asha Raghav
-# z5363204
-# COMP9417 Group Project
-# Word2Vec model
-# Authored 27/07/23
+"""
+This module is used to run the Word2Vec model on the dataset.
+"""
+
 
 # TODO: Download the train and test parquet files from:
 # https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet
@@ -21,20 +20,20 @@ import pickle
 
 
 def load_data(pickle_file, data_file):
-    '''
-        Retrieves data from a given file using cache.
+    """
+    Retrieves data from a given file using cache.
 
-        If the pickle file exists with the data, retrieves it from the file.
-        Otherwise, as retrieving data from a file for the first time,
-        stores in a pickle file for faster future retrieval.
+    If the pickle file exists with the data, retrieves it from the file.
+    Otherwise, as retrieving data from a file for the first time,
+    stores in a pickle file for faster future retrieval.
 
-        Params:
-            pickle_file (str): file path of pickle file containing required data
-            data_file (str): file path of file containing data to be stored and used
+    Params:
+        pickle_file (str): file path of pickle file containing required data
+        data_file (str): file path of file containing data to be stored and used
 
-        Returns: 
-            DataFrame of polars type
-    '''
+    Returns: 
+        DataFrame of polars type
+    """
 
     if os.path.exists(pickle_file):
         print('Reading data from cache')
@@ -52,18 +51,18 @@ def load_data(pickle_file, data_file):
 
 
 def transform_data(train_data, test_data):
-    '''
-        Changes data to a form that the gensim model can iterate with.
+    """
+    Changes data to a form that the gensim model can iterate with.
 
-        Uses polars to merge datasets to train on.
+    Uses polars to merge datasets to train on.
 
-        Params:
-            train_data (polars df): dataframe with the training data
-            test_data (polars df): dataframe with the test data
+    Params:
+        train_data (polars df): dataframe with the training data
+        test_data (polars df): dataframe with the test data
 
-        Returns:
-            Dataframe with iterable session values
-    '''
+    Returns:
+        Dataframe with iterable session values
+    """
 
     # Merge data into one dataframe
     transformed_df = pl.concat([train_data, test_data]).groupby(
@@ -72,18 +71,18 @@ def transform_data(train_data, test_data):
 
 
 def generate_labels(test_sts, test_sAIDs):
-    '''
-        Creates predictions using word2Vec embeddings and approximate nearest neighbour search.
+    """
+    Creates predictions using word2Vec embeddings and approximate nearest neighbour search.
 
-        Generates up to 20 AID values and sorts them based on event type weightage given. 
+    Generates up to 20 AID values and sorts them based on event type weightage given. 
 
-        Params:
-            test_sts (list): list grouped by the test session types 
-            test_sAIDs (list): list grouped by the test session Article ID (AID) values
+    Params:
+        test_sts (list): list grouped by the test session types 
+        test_sAIDs (list): list grouped by the test session Article ID (AID) values
 
-        Returns:
-            labs (list): generated list of up to 20 AID values for each session id and type in the test set
-    '''
+    Returns:
+        labs (list): generated list of up to 20 AID values for each session id and type in the test set
+    """
 
     # Stores label values
     labs = []
@@ -120,18 +119,18 @@ def generate_labels(test_sts, test_sAIDs):
 
 
 def format_predictions(test_sAIDs, labels):
-    '''
-        Formats the predictions as required in submission.csv.
+    """
+    Formats the predictions as required in submission.csv.
 
-        Ensures sessiontype and session id are combined to form rows with their corresponding predicted AID values.
+    Ensures sessiontype and session id are combined to form rows with their corresponding predicted AID values.
 
-        Params:
-            test_sAIDs (Pandas dataframe): contains the test session ids
-            labels (list): contains the predicted session AID values
+    Params:
+        test_sAIDs (Pandas dataframe): contains the test session ids
+        labels (list): contains the predicted session AID values
 
-        Returns:
-            Pandas dataframe: containing predicted AID values for each session (labels)
-    '''
+    Returns:
+        Pandas dataframe: containing predicted AID values for each session (labels)
+    """
     w2v_predictions = pd.DataFrame(data={'session_type': test_sAIDs.index,
                                    'labels': labels})
     prediction_dfs = []
@@ -147,6 +146,11 @@ def format_predictions(test_sAIDs, labels):
 
 
 def main():
+    """
+    Loads the data, trains a Word2Vec model on it, generates predictions using the trained model and
+    formats these predictions into the required format for submission.
+    """
+
     # Load in the data from the parquet files (assuming they are located in the test/resources/ directory)
     train = load_data('../../test/resources/all_train_data.pkl',
                       '../../test/resources/train_parquet/*')

@@ -1,3 +1,8 @@
+"""
+This module is used for stage two in re-ranking the Covisitation Matrices (along with getting the submission)
+"""
+
+
 from collections import Counter
 import glob
 import itertools
@@ -94,7 +99,8 @@ def suggest_buys(dataframe, buy_to_buy_covis, carts_to_orders_covis, top_orders)
     aids = dataframe.aid.tolist()
     types = dataframe.type.tolist()
     unique_aids = list(dict.fromkeys(aids[::-1]))
-    dataframe = dataframe.loc[(dataframe["type"] == 1) | (dataframe["type"] == 2)]
+    dataframe = dataframe.loc[(dataframe["type"] == 1)
+                              | (dataframe["type"] == 2)]
     unique_buys = list(dict.fromkeys(dataframe.aid.tolist()[::-1]))
     if len(unique_aids) >= TOP_N:
         weights = np.logspace(0.5, 1, len(aids), base=2, endpoint=True) - 1
@@ -135,6 +141,7 @@ def suggest_buys(dataframe, buy_to_buy_covis, carts_to_orders_covis, top_orders)
     ]
     result = unique_aids + top_aids2[: TOP_N - len(unique_aids)]
     return result + list(top_orders)[: TOP_N - len(result)]
+
 
 def rerank():
     """

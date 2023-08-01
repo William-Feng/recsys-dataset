@@ -1,3 +1,8 @@
+"""
+This module is used to run the Light Gradient Booking Model on the dataset.
+"""
+
+
 import glob
 import pandas as pd
 import polars as pl
@@ -14,9 +19,9 @@ PREDICTOR_VARS = [
     "aid",
     "type",
     "event_type_rev",
-    "session_length",
-    "ln_recency_score",
-    "ln_recency_score_type_weighted",
+    "session_duration",
+    "session_recency_factor",
+    "weighted_session_recency_factor",
 ]
 RESPONSE_VAR = "gt"
 
@@ -69,14 +74,14 @@ def sessesion_len(df):
     - df (DataFrame): The input DataFrame containing session data.
 
     Returns:
-    - DataFrame: A new DataFrame with an additional column "session_length" that contains the length of each session.
+    - DataFrame: A new DataFrame with an additional column "session_duration" that contains the length of each session.
     """
     return df.select(
-        [pl.col("*"), pl.col("session").count().over("session").alias("session_length")]
+        [pl.col("*"), pl.col("session").count().over("session").alias("session_duration")]
     )
 
 
-def ln_recency_score(df):
+def session_recency_factor(df):
     """
     Calculate the natural logarithm recency score for each row in the DataFrame.
 
@@ -85,40 +90,43 @@ def ln_recency_score(df):
     recent events higher than older ones.
 
     Parameters:
-    - df (DataFrame): The input DataFrame containing session data, including "session_length" and "event_type_rev" columns.
+    - df (DataFrame): The input DataFrame containing session data, including "session_duration" and "event_type_rev" columns.
 
     Returns:
-    - DataFrame: A new DataFrame with an additional column "ln_recency_score" that contains the natural logarithm
+    - DataFrame: A new DataFrame with an additional column "session_recency_factor" that contains the natural logarithm
                  recency score for each row. If the score is NaN, it is filled with 1.
     """
-    linear_interpolation = 0.1 + ((1 - 0.1) / (df["session_length"] - 1)) * (
-        df["session_length"] - df["event_type_rev"] - 1
+    linear_interpolation = 0.1 + ((1 - 0.1) / (df["session_duration"] - 1)) * (
+        df["session_duration"] - df["event_type_rev"] - 1
     )
     return df.with_columns(
-        pl.Series(2 ** linear_interpolation - 1).alias("ln_recency_score")
+        pl.Series(2 ** linear_interpolation -
+                  1).alias("session_recency_factor")
     ).fill_nan(1)
 
 
-def ln_recency_score_weighted(df):
+def session_recency_factor_weighted(df):
     """
     Calculate the type-weighted natural logarithm recency score for each row in the DataFrame.
 
     This function calculates the type-weighted natural logarithm recency score for each row in the DataFrame.
-    The type-weighted recency score is obtained by dividing the ln_recency_score by the corresponding type's weight
+    The type-weighted recency score is obtained by dividing the session_recency_factor by the corresponding type's weight
     based on the TYPE_WEIGHTING dictionary.
 
     Parameters:
-    - df (DataFrame): The input DataFrame containing session data, including "ln_recency_score" and "type" columns.
+    - df (DataFrame): The input DataFrame containing session data, including "session_recency_factor" and "type" columns.
 
     Returns:
-    - DataFrame: A new DataFrame with an additional column "ln_recency_score_type_weighted" that contains the type-weighted
+    - DataFrame: A new DataFrame with an additional column "weighted_session_recency_factor" that contains the type-weighted
                  natural logarithm recency score for each row.
     """
-    ln_recency_score_type_weighted = pl.Series(
-        df["ln_recency_score"] / df["type"].apply(lambda x: TYPE_WEIGHTING[x])
+    weighted_session_recency_factor = pl.Series(
+        df["session_recency_factor"] /
+        df["type"].apply(lambda x: TYPE_WEIGHTING[x])
     )
     return df.with_columns(
-        ln_recency_score_type_weighted.alias("ln_recency_score_type_weighted")
+        weighted_session_recency_factor.alias(
+            "weighted_session_recency_factor")
     )
 
 
@@ -142,31 +150,7 @@ def apply(df, pipeline):
     return df
 
 
-pipeline = [event_type_rev, sessesion_len, ln_recency_score, ln_recency_score_weighted]
-train = apply(train, pipeline)
-
-train_labels = train_labels.explode("ground_truth").with_columns(
-    [
-        pl.col("ground_truth").alias("aid"),
-        pl.col("type").apply(lambda x: TYPE_WEIGHTING_STR[x]),
-    ]
-)[["session", "type", "aid"]]
-
-train_labels = train_labels.with_columns(
-    [
-        pl.col("session").cast(pl.datatypes.Int32),
-        pl.col("type").cast(pl.datatypes.UInt8),
-        pl.col("aid").cast(pl.datatypes.Int32),
-    ]
-)
-
-train_labels = train_labels.with_columns(pl.lit(1).alias("gt"))
-train = train.join(
-    train_labels, how="left", on=["session", "type", "aid"]
-).with_columns(pl.col("gt").fill_null(0))
-
-
-def get_session_lenghts(df):
+def get_session_durations(df):
     """
     Get the session lengths for each session in the DataFrame.
 
@@ -180,17 +164,9 @@ def get_session_lenghts(df):
     """
     return (
         df.groupby("session")
-        .agg([pl.col("session").count().alias("session_length")])["session_length"]
+        .agg([pl.col("session").count().alias("session_duration")])["session_duration"]
         .to_numpy()
     )
-
-
-session_lengths_train = get_session_lenghts(train)
-lgbm_ranker = lgbm_ranker.fit(
-    train[PREDICTOR_VARS].to_pandas(),
-    train[RESPONSE_VAR].to_pandas(),
-    group=session_lengths_train,
-)
 
 
 def load_test_files():
@@ -214,32 +190,79 @@ def load_test_files():
     return pl.from_pandas(pd.concat(dfs).reset_index(drop=True))
 
 
-session_types = []
-labels = []
+def main():
+    """
+    Execute the entire data processing and model training pipeline.
 
-test = load_test_files()
-test = apply(test, pipeline)
-scores = lgbm_ranker.predict(test[PREDICTOR_VARS].to_pandas())
-test = test.with_columns(pl.Series(name="score", values=scores))
-test_predictions = test.sort(by=["session", "score"], descending=True)[
-    ["session", "aid"]
-]
-test_predictions = (
-    test_predictions.to_pandas()
-    .groupby("session")
-    .head(20)
-    .groupby("session")
-    .agg(list)
-    .reset_index(drop=False)
-)
+    This is the main function that runs the entire data processing and model training pipeline. It applies the data
+    processing pipeline to the training and test data, trains the LGBMRanker model, predicts the test data, and generates
+    the submission file.
+    """
 
-for session, preds in zip(
-    test_predictions["session"].to_numpy(), test_predictions["aid"].to_numpy()
-):
-    l = " ".join(str(p) for p in preds)
-    for session_type in ["clicks", "carts", "orders"]:
-        labels.append(l)
-        session_types.append(f"{session}_{session_type}")
+    pipeline = [event_type_rev, sessesion_len,
+                session_recency_factor, session_recency_factor_weighted]
+    train = apply(train, pipeline)
 
-submission = pl.DataFrame({"session_type": session_types, "labels": labels})
-submission.write_csv("submission.csv")
+    train_labels = train_labels.explode("ground_truth").with_columns(
+        [
+            pl.col("ground_truth").alias("aid"),
+            pl.col("type").apply(lambda x: TYPE_WEIGHTING_STR[x]),
+        ]
+    )[["session", "type", "aid"]]
+
+    train_labels = train_labels.with_columns(
+        [
+            pl.col("session").cast(pl.datatypes.Int32),
+            pl.col("type").cast(pl.datatypes.UInt8),
+            pl.col("aid").cast(pl.datatypes.Int32),
+        ]
+    )
+
+    train_labels = train_labels.with_columns(pl.lit(1).alias("gt"))
+    train = train.join(
+        train_labels, how="left", on=["session", "type", "aid"]
+    ).with_columns(pl.col("gt").fill_null(0))
+
+    session_durations_train = get_session_durations(train)
+
+    lgbm_ranker = lgbm_ranker.fit(
+        train[PREDICTOR_VARS].to_pandas(),
+        train[RESPONSE_VAR].to_pandas(),
+        group=session_durations_train,
+    )
+
+    session_types = []
+    labels = []
+
+    test = load_test_files()
+    test = apply(test, pipeline)
+    scores = lgbm_ranker.predict(test[PREDICTOR_VARS].to_pandas())
+    test = test.with_columns(pl.Series(name="score", values=scores))
+    test_predictions = test.sort(by=["session", "score"], descending=True)[
+        ["session", "aid"]
+    ]
+    test_predictions = (
+        test_predictions.to_pandas()
+        .groupby("session")
+        .head(20)
+        .groupby("session")
+        .agg(list)
+        .reset_index(drop=False)
+    )
+
+    for session, preds in zip(
+        test_predictions["session"].to_numpy(
+        ), test_predictions["aid"].to_numpy()
+    ):
+        l = " ".join(str(p) for p in preds)
+        for session_type in ["clicks", "carts", "orders"]:
+            labels.append(l)
+            session_types.append(f"{session}_{session_type}")
+
+    submission = pl.DataFrame(
+        {"session_type": session_types, "labels": labels})
+    submission.write_csv("submission.csv")
+
+
+if __name__ == "__main__":
+    main()
