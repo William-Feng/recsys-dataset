@@ -9,6 +9,9 @@ switch = False
 # Read total scores from the file names
 starts_with = "0.0"
 
+def col():
+    return "#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
+
 with open("./output.log", 'r') as file:
     for line in file:
         if line.startswith('Scores'):
@@ -17,10 +20,9 @@ with open("./output.log", 'r') as file:
             yy.append(float(score_str))
         elif line.endswith('.csv\n'):
             if not line.startswith(starts_with):
+                legends.append(starts_with)
                 starts_with = line.split('_')[0]
-                col = "#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)])
-                legends.append(line.split('_')[0])
-                plt.plot(xx, yy, marker='o', color=col)
+                plt.plot(xx, yy, marker='o', color=col())
                 plt.xlabel("Average Pulse")
 
                 xx = []
@@ -28,8 +30,10 @@ with open("./output.log", 'r') as file:
                 xx.append(float(line.split('_')[1]))
             else:
                 xx.append(float(line.split('_')[1]))
+    
+    legends.append(starts_with)
 
-plt.plot(xx, yy, marker='o', color=col)
+plt.plot(xx, yy, marker='o', color=col())
 plt.xlabel("'map' weighting")
 plt.ylabel("XGBoost Recall Score")
 plt.title("Recall score vs weighted 'ndcg', 'map' and 'pairwise'")
