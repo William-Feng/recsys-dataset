@@ -9,7 +9,7 @@ switch = False
 # Read total scores from the file names
 starts_with = "0.0"
 
-with open("process/XGBoost/output.log", 'r') as file:
+with open("./output.log", 'r') as file:
     for line in file:
         if line.startswith('Scores'):
             score_str = line.split(':')[5].strip()
@@ -37,4 +37,4 @@ plt.legend(legends)
 # plt.xticks(range(len(file_names)), file_names, rotation=45)
 plt.grid(True)
 plt.tight_layout()
-plt.show()
+plt.savefig('hyperparameter-selection')
