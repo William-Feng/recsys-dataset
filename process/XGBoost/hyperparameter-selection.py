@@ -32,8 +32,8 @@ with open("./output.log", 'r') as file:
 plt.plot(xx, yy, marker='o', color=col)
 plt.xlabel("'map' weighting")
 plt.ylabel("XGBoost Recall Score")
-plt.title("Recall core vs weighted 'ndcg', 'map' and 'pairwise'")
-plt.legend(legends, title="'pairwise' weighting")
+plt.title("Recall score vs weighted 'ndcg', 'map' and 'pairwise'")
+plt.legend(legends, title="'pairwise' weighting", prop={'size': 5})
 
 plt.grid(True)
 plt.tight_layout()
