@@ -1,8 +1,7 @@
-# Asha Raghav
-# z5363204
-# COMP9417 Group Project
-# Word2Vec model
-# Authored 27/07/23
+"""
+This module is used to run the Word2Vec model on the dataset.
+"""
+
 
 # TODO: Download the train and test parquet files from:
 # https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet
@@ -21,20 +20,20 @@ import pickle
 
 
 def load_data(pickle_file, data_file):
-    '''
-        Retrieves data from a given file using cache.
+    """
+    Retrieves data from a given file using cache.
 
-        If the pickle file exists with the data, retrieves it from the file.
-        Otherwise, as retrieving data from a file for the first time,
-        stores in a pickle file for faster future retrieval.
+    If the pickle file exists with the data, retrieves it from the file.
+    Otherwise, as retrieving data from a file for the first time,
+    stores in a pickle file for faster future retrieval.
 
-        Params:
-            pickle_file (str): file path of pickle file containing required data
-            data_file (str): file path of file containing data to be stored and used
+    Params:
+        pickle_file (str): file path of pickle file containing required data
+        data_file (str): file path of file containing data to be stored and used
 
-        Returns: 
-            DataFrame of polars type
-    '''
+    Returns: 
+        DataFrame of polars type
+    """
 
     if os.path.exists(pickle_file):
         print('Reading data from cache')
@@ -52,18 +51,18 @@ def load_data(pickle_file, data_file):
 
 
 def transform_data(train_data, test_data):
-    '''
-        Changes data to a form that the gensim model can iterate with.
+    """
+    Changes data to a form that the gensim model can iterate with.
 
-        Uses polars to merge datasets to train on.
+    Uses polars to merge datasets to train on.
 
-        Params:
-            train_data (polars df): dataframe with the training data
-            test_data (polars df): dataframe with the test data
+    Params:
+        train_data (polars df): dataframe with the training data
+        test_data (polars df): dataframe with the test data
 
-        Returns:
-            Dataframe with iterable session values
-    '''
+    Returns:
+        Dataframe with iterable session values
+    """
 
     # Merge data into one dataframe
     transformed_df = pl.concat([train_data, test_data]).groupby(
@@ -71,19 +70,19 @@ def transform_data(train_data, test_data):
     return transformed_df['s'].to_list()
 
 
-def generate_labels(test_sts, test_sAIDs, index, aid_index, w2v_model):
-    '''
-        Creates predictions using word2Vec embeddings and approximate nearest neighbour search.
+def generate_labels(test_sts, test_sAIDs):
+    """
+    Creates predictions using word2Vec embeddings and approximate nearest neighbour search.
 
-        Generates up to 20 AID values and sorts them based on event type weightage given. 
+    Generates up to 20 AID values and sorts them based on event type weightage given. 
 
-        Params:
-            test_sts (list): list grouped by the test session types 
-            test_sAIDs (list): list grouped by the test session Article ID (AID) values
+    Params:
+        test_sts (list): list grouped by the test session types 
+        test_sAIDs (list): list grouped by the test session Article ID (AID) values
 
-        Returns:
-            labs (list): generated list of up to 20 AID values for each session id and type in the test set
-    '''
+    Returns:
+        labs (list): generated list of up to 20 AID values for each session id and type in the test set
+    """
 
     # Stores label values
     labs = []
@@ -110,7 +109,8 @@ def generate_labels(test_sts, test_sAIDs, index, aid_index, w2v_model):
             # Utilise word2vec embeddings in candidate generation
             AIDs = list(dict.fromkeys(AIDs[::-1]))
             # Search for the nearest aid values to the current AID value
-            nearest_neighbours = [w2v_model.wv.index_to_key[i] for i in index.get_nns_by_item(aid_index[AIDs[0]], 21)[1:]]
+            nearest_neighbours = [w2v_model.wv.index_to_key[i]
+                                  for i in index.get_nns_by_item(aid_index[AIDs[0]], 21)[1:]]
             # Add the nearest neighbours to the AID value predictions
             labs.append((AIDs+nearest_neighbours)[:20])
     # Join all the prediction values, space separated
@@ -119,18 +119,18 @@ def generate_labels(test_sts, test_sAIDs, index, aid_index, w2v_model):
 
 
 def format_predictions(test_sAIDs, labels):
-    '''
-        Formats the predictions as required in submission.csv.
+    """
+    Formats the predictions as required in submission.csv.
 
-        Ensures sessiontype and session id are combined to form rows with their corresponding predicted AID values.
+    Ensures sessiontype and session id are combined to form rows with their corresponding predicted AID values.
 
-        Params:
-            test_sAIDs (Pandas dataframe): contains the test session ids
-            labels (list): contains the predicted session AID values
+    Params:
+        test_sAIDs (Pandas dataframe): contains the test session ids
+        labels (list): contains the predicted session AID values
 
-        Returns:
-            Pandas dataframe: containing predicted AID values for each session (labels)
-    '''
+    Returns:
+        Pandas dataframe: containing predicted AID values for each session (labels)
+    """
     w2v_predictions = pd.DataFrame(data={'session_type': test_sAIDs.index,
                                    'labels': labels})
     prediction_dfs = []
@@ -143,52 +143,62 @@ def format_predictions(test_sAIDs, labels):
         prediction_dfs.append(formatted_predictions)
 
     return pd.concat(prediction_dfs).reset_index(drop=True)
+
+
 def create_submission(submission, weights):
+    """
+    Creates the predictions file based on the weights for hyperparameter tuning.
+    """
+
     weight_1 = "{:.1f}".format(weights[0])
     weight_2 = "{:.1f}".format(weights[1])
     weight_3 = "{:.1f}".format(weights[2])
 
-    # submission.write_csv(f'predictions/{weight_1}_{weight_2}_{weight_3}.csv')
-    submission.to_csv(f'predictions/{weight_1}_{weight_2}_{weight_3}.csv', index=False)
+    submission.to_csv(
+        f'predictions/{weight_1}_{weight_2}_{weight_3}.csv', index=False)
+
 
 def main():
+    """
+    Loads the data, trains a Word2Vec model on it with hyperparameter tuning, generates predictions
+    using the trained model and formats these predictions into the required format for submission.
+    """
+
     ns_exp_w = [-0.5, 0.75, 0.5]
-    window_w = [1, 5,10]
-    epoch_w = [1, 5,10]
-    weights = [ns_exp_w,window_w,epoch_w]
+    window_w = [1, 5, 10]
+    epoch_w = [1, 5, 10]
+    weights = [ns_exp_w, window_w, epoch_w]
 
     for iteration, weight in enumerate(weights):
         for idx, w in enumerate(weight):
             # Load in the data from the parquet files (assuming they are located in the test/resources/ directory)
             train = load_data('../../test/resources/all_train_data.pkl',
-                            '../../test/resources/train_parquet/*')
+                              '../../test/resources/train_parquet/*')
             test = load_data('../../test/resources/all_test_data.pkl',
-                            '../../test/resources/test_parquet/*')
+                             '../../test/resources/test_parquet/*')
 
             # Train word2vec model
-            # Original
-            # w2v_model = Word2Vec(sentences=transform_data(
-            #     train, test), vector_size=32, min_count=1, workers=4)
-            # WEIGHT = [epochs, window, ns_exponent]
-            applied_weights = [6,10,1]
+            applied_weights = [6, 10, 1]
             if iteration == 0:
                 w2v_model = Word2Vec(sentences=transform_data(
-                    train, test), vector_size=32, epochs=6, window=4, 
+                    train, test), vector_size=32, epochs=6, window=4,
                     ns_exponent=weights[iteration][idx], min_count=1, workers=6)
-                applied_weights = [6,4,weights[iteration][idx]]
+                applied_weights = [6, 4, weights[iteration][idx]]
             if iteration == 1:
                 w2v_model = Word2Vec(sentences=transform_data(
-                    train, test), vector_size=32, epochs=weights[iteration][idx], 
+                    train, test), vector_size=32, epochs=weights[iteration][idx],
                     window=4, ns_exponent=1, min_count=1, workers=6)
                 applied_weights = [weights[iteration][idx], 4, 1]
             if iteration == 2:
                 w2v_model = Word2Vec(sentences=transform_data(
-                    train, test), vector_size=32, epochs=6, window=weights[iteration][idx], 
+                    train, test), vector_size=32, epochs=6, window=weights[iteration][idx],
                     ns_exponent=1, min_count=1, workers=6)
                 applied_weights = [6, weights[iteration][idx], 1]
             print(f'applied weights {applied_weights}')
+
             # For Approx Nearest Neighbour search - create embeddings
-            aid_index = {aid: i for i, aid in enumerate(w2v_model.wv.index_to_key)}
+            aid_index = {aid: i for i, aid in enumerate(
+                w2v_model.wv.index_to_key)}
             index = AnnoyIndex(32, 'euclidean')
             for _, idx in aid_index.items():
                 # Obtain embedding for a specific aid value
@@ -205,14 +215,15 @@ def main():
                 drop=True).groupby('session')['aid'].apply(list)
 
             # Create predictions using word2vec embeddings
-            labels = generate_labels(test_sts, test_sAIDs, index, aid_index, w2v_model)
+            labels = generate_labels(
+                test_sts, test_sAIDs, index, aid_index, w2v_model)
 
             # Reformat the final dataframe
             final_preds = format_predictions(test_sAIDs, labels)
 
             # Save generated predictions to csv files
-            # final_preds.to_csv('predictions.csv', index=False)
             create_submission(final_preds, applied_weights)
+
 
 if __name__ == '__main__':
     main()
