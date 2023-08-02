@@ -145,47 +145,84 @@ def format_predictions(test_sAIDs, labels):
     return pd.concat(prediction_dfs).reset_index(drop=True)
 
 
+def create_submission(submission, weights):
+    """
+    Creates the predictions file based on the weights for hyperparameter tuning.
+    """
+
+    weight_1 = "{:.1f}".format(weights[0])
+    weight_2 = "{:.1f}".format(weights[1])
+    weight_3 = "{:.1f}".format(weights[2])
+
+    submission.to_csv(
+        f'predictions/{weight_1}_{weight_2}_{weight_3}.csv', index=False)
+
+
 def main():
     """
-    Loads the data, trains a Word2Vec model on it, generates predictions using the trained model and
-    formats these predictions into the required format for submission.
+    Loads the data, trains a Word2Vec model on it with hyperparameter tuning, generates predictions
+    using the trained model and formats these predictions into the required format for submission.
     """
 
-    # Load in the data from the parquet files (assuming they are located in the test/resources/ directory)
-    train = load_data('../../test/resources/all_train_data.pkl',
-                      '../../test/resources/train_parquet/*')
-    test = load_data('../../test/resources/all_test_data.pkl',
-                     '../../test/resources/test_parquet/*')
+    ns_exp_w = [-0.5, 0.75, 0.5]
+    window_w = [1, 5, 10]
+    epoch_w = [1, 5, 10]
+    weights = [ns_exp_w, window_w, epoch_w]
 
-    # Train word2vec model
-    w2v_model = Word2Vec(sentences=transform_data(
-        train, test), vector_size=32, min_count=1, workers=4)
+    for iteration, weight in enumerate(weights):
+        for idx, w in enumerate(weight):
+            # Load in the data from the parquet files (assuming they are located in the test/resources/ directory)
+            train = load_data('../../test/resources/all_train_data.pkl',
+                              '../../test/resources/train_parquet/*')
+            test = load_data('../../test/resources/all_test_data.pkl',
+                             '../../test/resources/test_parquet/*')
 
-    # For Approx Nearest Neighbour search - create embeddings
-    aid_index = {aid: i for i, aid in enumerate(w2v_model.wv.index_to_key)}
-    index = AnnoyIndex(32, 'euclidean')
-    for _, idx in aid_index.items():
-        # Obtain embedding for a specific aid value
-        index.add_item(idx, w2v_model.wv.vectors[idx])
-    index.build(10)
+            # Train word2vec model
+            applied_weights = [6, 10, 1]
+            if iteration == 0:
+                w2v_model = Word2Vec(sentences=transform_data(
+                    train, test), vector_size=32, epochs=6, window=4,
+                    ns_exponent=weights[iteration][idx], min_count=1, workers=6)
+                applied_weights = [6, 4, weights[iteration][idx]]
+            if iteration == 1:
+                w2v_model = Word2Vec(sentences=transform_data(
+                    train, test), vector_size=32, epochs=weights[iteration][idx],
+                    window=4, ns_exponent=1, min_count=1, workers=6)
+                applied_weights = [weights[iteration][idx], 4, 1]
+            if iteration == 2:
+                w2v_model = Word2Vec(sentences=transform_data(
+                    train, test), vector_size=32, epochs=6, window=weights[iteration][idx],
+                    ns_exponent=1, min_count=1, workers=6)
+                applied_weights = [6, weights[iteration][idx], 1]
+            print(f'applied weights {applied_weights}')
 
-    # Read in the sample submission file
-    pd.read_csv('../../test/resources/sample_submission.csv')
+            # For Approx Nearest Neighbour search - create embeddings
+            aid_index = {aid: i for i, aid in enumerate(
+                w2v_model.wv.index_to_key)}
+            index = AnnoyIndex(32, 'euclidean')
+            for _, idx in aid_index.items():
+                # Obtain embedding for a specific aid value
+                index.add_item(idx, w2v_model.wv.vectors[idx])
+            index.build(10)
 
-    # Convert test session types and AIDs to lists
-    test_sts = test.to_pandas().reset_index(
-        drop=True).groupby('session')['type'].apply(list)
-    test_sAIDs = test.to_pandas().reset_index(
-        drop=True).groupby('session')['aid'].apply(list)
+            # Read in the sample submission file
+            pd.read_csv('../../test/resources/sample_submission.csv')
 
-    # Create predictions using word2vec embeddings
-    labels = generate_labels(test_sts, test_sAIDs)
+            # Convert test session types and AIDs to lists
+            test_sts = test.to_pandas().reset_index(
+                drop=True).groupby('session')['type'].apply(list)
+            test_sAIDs = test.to_pandas().reset_index(
+                drop=True).groupby('session')['aid'].apply(list)
 
-    # Reformat the final dataframe
-    final_preds = format_predictions(test_sAIDs, labels)
+            # Create predictions using word2vec embeddings
+            labels = generate_labels(
+                test_sts, test_sAIDs, index, aid_index, w2v_model)
 
-    # Save generated predictions to csv files
-    final_preds.to_csv('predictions.csv', index=False)
+            # Reformat the final dataframe
+            final_preds = format_predictions(test_sAIDs, labels)
+
+            # Save generated predictions to csv files
+            create_submission(final_preds, applied_weights)
 
 
 if __name__ == '__main__':
