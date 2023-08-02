@@ -30,11 +30,11 @@ with open("./output.log", 'r') as file:
                 xx.append(float(line.split('_')[1]))
 
 plt.plot(xx, yy, marker='o', color=col)
-plt.xlabel('File Index')
-plt.ylabel('Total Score')
-plt.title('Total Score vs. File Index')
-plt.legend(legends)
-# plt.xticks(range(len(file_names)), file_names, rotation=45)
+plt.xlabel("'map' weighting")
+plt.ylabel("XGBoost Recall Score")
+plt.title("Recall core vs weighted 'ndcg', 'map' and 'pairwise'")
+plt.legend(legends, title="'pairwise' weighting")
+
 plt.grid(True)
 plt.tight_layout()
 plt.savefig('hyperparameter-selection')
