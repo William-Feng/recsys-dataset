@@ -316,7 +316,7 @@ This Kaggle competition was completed by a group of 3 students for the COMP9417 
 
 - The **`test/resources/`** directory contains all the data files used for the project.
   - In the GitHub repository, you will only find a `train.jsonl` file, which simply contains the first 10 and last 10 lines of the full training data.
-  - To properly run all the models, you will need to insert the [full OTTO dataset](<(https://www.kaggle.com/datasets/otto/recsys-dataset)>) here, as well as any parquet files that may be used in the data processing.
+  - To properly run all the models, you will need to insert the [partialOTTO dataset](https://www.kaggle.com/competitions/otto-recommender-system/data) here, as well as any [parquet files](https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet) that may be used in the data processing.
   - These files are not included in the GitHub repository due to their large size.
 - The **`src/`** directory contains contains all the code for generating the 'ground truth' labels used for testing.
   - The specific commands to run the starter Python files are explained in the section below for clarity.
@@ -327,9 +327,9 @@ This Kaggle competition was completed by a group of 3 students for the COMP9417 
 
 ## Running Models & Calculating Score
 
-1. [Download](https://www.kaggle.com/datasets/otto/recsys-dataset) and place these files in the `test/resources/` directory
+1. [Download](https://www.kaggle.com/competitions/otto-recommender-system/data) and place these files in the `test/resources/` directory
 
-   - `otto-recsys-test.jsonl` (750MB)
+   - `otto-recsys-test.jsonl` (402MB)
    - `otto-recsys-train.jsonl` (11.31GB)
 
 2. Generate Test Labels/Ground Truths (from the `src/` directory)
