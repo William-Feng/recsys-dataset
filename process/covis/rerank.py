@@ -42,7 +42,7 @@ def suggest_clicks(dataframe, clicks_covis, top_clicks):
     """
     Generate a list of suggested article IDs for user clicks based on the provided data.
 
-    Args:
+    Params:
     dataframe (pandas.DataFrame):
         Input DataFrame containing user history with columns 'aid' (article ID) and 'type' (event type).
     clicks_covis (dict):
@@ -87,7 +87,7 @@ def suggest_buys(dataframe, buy_to_buy_covis, carts_to_orders_covis, top_orders)
     """
     Generate suggested article IDs for user buys.
 
-    Args:
+    Params:
     dataframe (pandas.DataFrame): User history with 'aid' and 'type' columns.
     buy_to_buy_covis (dict): Co-visitation matrix for buy-to-buy interactions.
     carts_to_orders_covis (dict): Co-visitation matrix for cart-to-order interactions.

@@ -14,7 +14,7 @@ def build_event_df_from_chunks(chunk):
     """
     This function constructs a DataFrame of event data from a chunk of data.
 
-    Args:
+    Params:
         chunk (DataFrame): Chunk of data to process.
 
     Returns:
@@ -38,7 +38,7 @@ def load_data(file_path, sample_size=100_000):
     This function loads JSON data in chunks from a specified file path, 
     and consolidates the chunks into a DataFrame.
 
-    Args:
+    Params:
         file_path (Path): Path to the JSON file.
         sample_size (int, optional): Size of the chunk for reading the file. Defaults to 100_000.
 
@@ -59,7 +59,7 @@ def get_best_sold_list(df, top_n=20):
     """
     This function creates a list of best sold items.
 
-    Args:
+    Params:
         df (DataFrame): Data containing 'type', 'aid', and 'count' columns.
         top_n (int, optional): Number of top items to include. Defaults to 20.
 
@@ -80,7 +80,7 @@ def get_recommended(df, action_type):
     """
     This function creates a DataFrame of recommended actions.
 
-    Args:
+    Params:
         df (DataFrame): DataFrame to extract actions from.
         action_type (str): Type of action to extract ('clicks', 'carts', 'orders').
 
@@ -98,7 +98,7 @@ def create_submission(recommend_df, best_sold_list, data_path):
     """
     This function creates a submission file based on the provided recommendations and best sold list.
 
-    Args:
+    Params:
         recommend_df (DataFrame): DataFrame of recommendations.
         best_sold_list (str): String of best sold item aids.
         data_path (Path): Path to the sample submission file.
@@ -123,7 +123,7 @@ def main():
 
     train_df = load_data(PATH / 'otto-recsys-train.jsonl')
     train_df["minutes"] = train_df.groupby(
-        "session")["ts"].diff(-1)*(-1/1000/60)
+        "session")["ts"].diff(-1)*(-1 / 1000 / 60)
     best_sold_list = get_best_sold_list(train_df)
 
     test_df = load_data(PATH / 'otto-recsys-test.jsonl')
