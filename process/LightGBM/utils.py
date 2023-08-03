@@ -42,6 +42,3 @@ for f in files:
 
 READ_CT = 5
 CHUNK = int(np.ceil(len(files) / 6))
-print(
-    f"We will process {len(files)} files, in groups of {READ_CT} and chunks of {CHUNK}."
-)

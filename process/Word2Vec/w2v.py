@@ -36,11 +36,11 @@ def load_data(pickle_file, data_file):
     """
 
     if os.path.exists(pickle_file):
-        print('Reading data from cache')
-        return pickle.load(open(pickle_file, 'rb'))
+        print("Reading data from cache")
+        return pickle.load(open(pickle_file, "rb"))
     else:
         # No cache, so make file and save for subsequent runs
-        with open(pickle_file, 'wb') as f:
+        with open(pickle_file, "wb") as f:
             files = sorted(glob.glob(data_file))
             dfs = []
             for fpath in files:
@@ -65,9 +65,12 @@ def transform_data(train_data, test_data):
     """
 
     # Merge data into one dataframe
-    transformed_df = pl.concat([train_data, test_data]).groupby(
-        'session').agg(pl.col('aid').alias('s'))
-    return transformed_df['s'].to_list()
+    transformed_df = (
+        pl.concat([train_data, test_data])
+        .groupby("session")
+        .agg(pl.col("aid").alias("s"))
+    )
+    return transformed_df["s"].to_list()
 
 
 def generate_labels(test_sts, test_sAIDs):
@@ -97,24 +100,27 @@ def generate_labels(test_sts, test_sAIDs):
             # Iterate through and apply weights
             for aid, w, t in zip(AIDs, weights, event_types):
                 # Assign the event types to corresponding indices
-                type_dict = {'clicks': 0, 'carts': 1, 'orders': 2}
+                type_dict = {"clicks": 0, "carts": 1, "orders": 2}
                 # Calculate weighting to assigned AID value
                 aids_copy[aid] += w * type_weight[type_dict[t]]
             # Sort article ID values corresponding to the given weightings in the items
-            sorted_aid_vals = [k for k, v in sorted(
-                aids_copy.items(), key=lambda item: -item[1])]
+            sorted_aid_vals = [
+                k for k, v in sorted(aids_copy.items(), key=lambda item: -item[1])
+            ]
             # Store the ordered predictions
             labs.append(sorted_aid_vals[:20])
         else:
             # Utilise word2vec embeddings in candidate generation
             AIDs = list(dict.fromkeys(AIDs[::-1]))
             # Search for the nearest aid values to the current AID value
-            nearest_neighbours = [w2v_model.wv.index_to_key[i]
-                                  for i in index.get_nns_by_item(aid_index[AIDs[0]], 21)[1:]]
+            nearest_neighbours = [
+                w2v_model.wv.index_to_key[i]
+                for i in index.get_nns_by_item(aid_index[AIDs[0]], 21)[1:]
+            ]
             # Add the nearest neighbours to the AID value predictions
-            labs.append((AIDs+nearest_neighbours)[:20])
+            labs.append((AIDs + nearest_neighbours)[:20])
     # Join all the prediction values, space separated
-    labs = [' '.join([str(lab) for lab in labels]) for labels in labs]
+    labs = [" ".join([str(lab) for lab in labels]) for labels in labs]
     return labs
 
 
@@ -131,15 +137,17 @@ def format_predictions(test_sAIDs, labels):
     Returns:
         Pandas dataframe: containing predicted AID values for each session (labels)
     """
-    w2v_predictions = pd.DataFrame(data={'session_type': test_sAIDs.index,
-                                   'labels': labels})
+    w2v_predictions = pd.DataFrame(
+        data={"session_type": test_sAIDs.index, "labels": labels}
+    )
     prediction_dfs = []
-    session_type = ['clicks', 'carts', 'orders']
+    session_type = ["clicks", "carts", "orders"]
     for st in session_type:
         # Reformat as submission code
         formatted_predictions = w2v_predictions.copy()
-        formatted_predictions.session_type = formatted_predictions.session_type.astype(
-            'str') + f'_{st}'
+        formatted_predictions.session_type = (
+            formatted_predictions.session_type.astype("str") + f"_{st}"
+        )
         prediction_dfs.append(formatted_predictions)
 
     return pd.concat(prediction_dfs).reset_index(drop=True)
@@ -154,8 +162,7 @@ def create_submission(submission, weights):
     weight_2 = "{:.1f}".format(weights[1])
     weight_3 = "{:.1f}".format(weights[2])
 
-    submission.to_csv(
-        f'predictions/{weight_1}_{weight_2}_{weight_3}.csv', index=False)
+    submission.to_csv(f"predictions/{weight_1}_{weight_2}_{weight_3}.csv", index=False)
 
 
 def main():
@@ -172,51 +179,79 @@ def main():
     for iteration, weight in enumerate(weights):
         for idx, w in enumerate(weight):
             # Load in the data from the parquet files (assuming they are located in the test/resources/ directory)
-            train = load_data('../../test/resources/all_train_data.pkl',
-                              '../../test/resources/train_parquet/*')
-            test = load_data('../../test/resources/all_test_data.pkl',
-                             '../../test/resources/test_parquet/*')
+            train = load_data(
+                "../../test/resources/all_train_data.pkl",
+                "../../test/resources/train_parquet/*",
+            )
+            test = load_data(
+                "../../test/resources/all_test_data.pkl",
+                "../../test/resources/test_parquet/*",
+            )
 
             # Train word2vec model
             applied_weights = [6, 10, 1]
             if iteration == 0:
-                w2v_model = Word2Vec(sentences=transform_data(
-                    train, test), vector_size=32, epochs=6, window=4,
-                    ns_exponent=weights[iteration][idx], min_count=1, workers=6)
+                w2v_model = Word2Vec(
+                    sentences=transform_data(train, test),
+                    vector_size=32,
+                    epochs=6,
+                    window=4,
+                    ns_exponent=weights[iteration][idx],
+                    min_count=1,
+                    workers=6,
+                )
                 applied_weights = [6, 4, weights[iteration][idx]]
             if iteration == 1:
-                w2v_model = Word2Vec(sentences=transform_data(
-                    train, test), vector_size=32, epochs=weights[iteration][idx],
-                    window=4, ns_exponent=1, min_count=1, workers=6)
+                w2v_model = Word2Vec(
+                    sentences=transform_data(train, test),
+                    vector_size=32,
+                    epochs=weights[iteration][idx],
+                    window=4,
+                    ns_exponent=1,
+                    min_count=1,
+                    workers=6,
+                )
                 applied_weights = [weights[iteration][idx], 4, 1]
             if iteration == 2:
-                w2v_model = Word2Vec(sentences=transform_data(
-                    train, test), vector_size=32, epochs=6, window=weights[iteration][idx],
-                    ns_exponent=1, min_count=1, workers=6)
+                w2v_model = Word2Vec(
+                    sentences=transform_data(train, test),
+                    vector_size=32,
+                    epochs=6,
+                    window=weights[iteration][idx],
+                    ns_exponent=1,
+                    min_count=1,
+                    workers=6,
+                )
                 applied_weights = [6, weights[iteration][idx], 1]
-            print(f'applied weights {applied_weights}')
+            print(f"applied weights {applied_weights}")
 
             # For Approx Nearest Neighbour search - create embeddings
-            aid_index = {aid: i for i, aid in enumerate(
-                w2v_model.wv.index_to_key)}
-            index = AnnoyIndex(32, 'euclidean')
+            aid_index = {aid: i for i, aid in enumerate(w2v_model.wv.index_to_key)}
+            index = AnnoyIndex(32, "euclidean")
             for _, idx in aid_index.items():
                 # Obtain embedding for a specific aid value
                 index.add_item(idx, w2v_model.wv.vectors[idx])
             index.build(10)
 
             # Read in the sample submission file
-            pd.read_csv('../../test/resources/sample_submission.csv')
+            pd.read_csv("../../test/resources/sample_submission.csv")
 
             # Convert test session types and AIDs to lists
-            test_sts = test.to_pandas().reset_index(
-                drop=True).groupby('session')['type'].apply(list)
-            test_sAIDs = test.to_pandas().reset_index(
-                drop=True).groupby('session')['aid'].apply(list)
+            test_sts = (
+                test.to_pandas()
+                .reset_index(drop=True)
+                .groupby("session")["type"]
+                .apply(list)
+            )
+            test_sAIDs = (
+                test.to_pandas()
+                .reset_index(drop=True)
+                .groupby("session")["aid"]
+                .apply(list)
+            )
 
             # Create predictions using word2vec embeddings
-            labels = generate_labels(
-                test_sts, test_sAIDs, index, aid_index, w2v_model)
+            labels = generate_labels(test_sts, test_sAIDs, index, aid_index, w2v_model)
 
             # Reformat the final dataframe
             final_preds = format_predictions(test_sAIDs, labels)
@@ -225,5 +260,5 @@ def main():
             create_submission(final_preds, applied_weights)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

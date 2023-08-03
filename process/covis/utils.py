@@ -11,17 +11,17 @@ import numpy as np
 import glob
 
 
-TRAIN_PATH = "test/resources/train_parquet/*"
-TEST_PATH = "test/resources/test_parquet/*"
+TRAIN_PATH = "../../test/resources/train_parquet/*"
+TEST_PATH = "../../test/resources/test_parquet/*"
 TYPE_LABELS = {"clicks": 0, "carts": 1, "orders": 2}
 TYPE_WEIGHT = {0: 1, 1: 6, 2: 3}
 PREDICTIONS_OUTPUT_PATH = "../../covis-predictions.csv"
-
+TIME_MS_24_HRS = 24 * 60 * 60
 TOP_N = 20
-
-CLICKS_COVIS_FILE_PREFIX = "test/resources/covis/clicks"
-CARTS_TO_ORDERS_COVIS_FILE_PREFIX = "test/resources/covis/carts_to_orders"
-BUY_TO_BUY_COVIS_FILE_PREFIX = "test/resources/covis/buy_to_buy"
+MAX_DISK_SIZE = 2000000
+CLICKS_COVIS_FILE_PREFIX = "../test/resources/covis/clicks"
+CARTS_TO_ORDERS_COVIS_FILE_PREFIX = "../test/resources/covis/carts_to_orders"
+BUY_TO_BUY_COVIS_FILE_PREFIX = "../test/resources/covis/buy_to_buy"
 
 TS_BEGIN = 1659304800
 TS_END = 1662328791
@@ -65,9 +65,6 @@ for f in files:
 
 READ_CT = 5
 CHUNK = int(np.ceil(len(files) / 6))
-print(
-    f"We will process {len(files)} files, in groups of {READ_CT} and chunks of {CHUNK}."
-)
 
 
 def pqt_to_dict(dataframe):
@@ -101,25 +98,25 @@ def get_covis_matrices_df(NUM_SECTION=4):
     clicks_covis = [pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt")]
 
     for k in range(1, NUM_SECTION):
-        clicks_covis.append(pd.read_parquet(
-            f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
+        clicks_covis.append(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
 
     clicks_covis = pd.concat(clicks_covis)
 
-    carts_to_orders_covis = [pd.read_parquet(
-        f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_0.pqt")]
+    carts_to_orders_covis = [
+        pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_0.pqt")
+    ]
     for k in range(1, NUM_SECTION):
-        carts_to_orders_covis.append(pd.read_parquet(
-            f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
+        carts_to_orders_covis.append(
+            pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt")
+        )
     carts_to_orders_covis = pd.concat(carts_to_orders_covis)
 
-    buy_to_buy_covis = [pd.read_parquet(
-        f"{BUY_TO_BUY_COVIS_FILE_PREFIX}_0.pqt")]
+    buy_to_buy_covis = [pd.read_parquet(f"{BUY_TO_BUY_COVIS_FILE_PREFIX}_0.pqt")]
 
     return {
-        'clicks_covis': clicks_covis,
-        'carts_to_orders_covis': carts_to_orders_covis,
-        'buy_to_buy_covis': buy_to_buy_covis,
+        "clicks_covis": clicks_covis,
+        "carts_to_orders_covis": carts_to_orders_covis,
+        "buy_to_buy_covis": buy_to_buy_covis,
     }
 
 
@@ -137,8 +134,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
         dict: Dictionary with keys as file type and values as corresponding dict.
     """
 
-    clicks_covis = pqt_to_dict(pd.read_parquet(
-        f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt"))
+    clicks_covis = pqt_to_dict(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt"))
     for k in range(1, NUM_SECTION):
         clicks_covis.update(
             pqt_to_dict(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
@@ -149,8 +145,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
     )
     for k in range(1, NUM_SECTION):
         carts_to_orders_covis.update(
-            pqt_to_dict(pd.read_parquet(
-                f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
+            pqt_to_dict(pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
         )
 
     buy_to_buy_covis = pqt_to_dict(
@@ -158,7 +153,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
     )
 
     return {
-        'clicks_covis': clicks_covis,
-        'carts_to_orders_covis': carts_to_orders_covis,
-        'buy_to_buy_covis': buy_to_buy_covis,
+        "clicks_covis": clicks_covis,
+        "carts_to_orders_covis": carts_to_orders_covis,
+        "buy_to_buy_covis": buy_to_buy_covis,
     }

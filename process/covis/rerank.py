@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 
 import pandas as pd
-from .utils import (
+from utils import (
     PREDICTIONS_OUTPUT_PATH,
     TEST_PATH,
     TOP_N,
@@ -19,7 +19,7 @@ from .utils import (
 )
 
 NUM_SECTION = 4
-TOTAL_SIZE = 1.86e6 / NUM_SECTION
+TOTAL_SIZE = 2000000 / NUM_SECTION
 
 
 def load_test():
@@ -99,8 +99,7 @@ def suggest_buys(dataframe, buy_to_buy_covis, carts_to_orders_covis, top_orders)
     aids = dataframe.aid.tolist()
     types = dataframe.type.tolist()
     unique_aids = list(dict.fromkeys(aids[::-1]))
-    dataframe = dataframe.loc[(dataframe["type"] == 1)
-                              | (dataframe["type"] == 2)]
+    dataframe = dataframe.loc[(dataframe["type"] == 1) | (dataframe["type"] == 2)]
     unique_buys = list(dict.fromkeys(dataframe.aid.tolist()[::-1]))
     if len(unique_aids) >= TOP_N:
         weights = np.logspace(0.5, 1, len(aids), base=2, endpoint=True) - 1
@@ -162,9 +161,9 @@ def rerank():
     test_dataframe = load_test()
 
     matrices = get_covis_matrices_dict()
-    clicks_covis = matrices['click_covis']
-    carts_to_orders_covis = matrices['carts_to_orders_covis']
-    buy_to_buy_covis = matrices['buy_to_buy_covis']
+    clicks_covis = matrices["click_covis"]
+    carts_to_orders_covis = matrices["carts_to_orders_covis"]
+    buy_to_buy_covis = matrices["buy_to_buy_covis"]
 
     top_clicks = (
         test_dataframe.loc[test_dataframe["type"] == "clicks", "aid"]
