@@ -9,7 +9,7 @@ import itertools
 import numpy as np
 
 import pandas as pd
-from .utils import (
+from utils import (
     PREDICTIONS_OUTPUT_PATH,
     TEST_PATH,
     TOP_N,
@@ -19,7 +19,7 @@ from .utils import (
 )
 
 NUM_SECTION = 4
-TOTAL_SIZE = 1.86e6 / NUM_SECTION
+TOTAL_SIZE = 2000000 / NUM_SECTION
 
 
 def load_test():

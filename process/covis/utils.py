@@ -11,17 +11,17 @@ import numpy as np
 import glob
 
 
-TRAIN_PATH = "test/resources/train_parquet/*"
-TEST_PATH = "test/resources/test_parquet/*"
+TRAIN_PATH = "../../test/resources/train_parquet/*"
+TEST_PATH = "../../test/resources/test_parquet/*"
 TYPE_LABELS = {"clicks": 0, "carts": 1, "orders": 2}
 TYPE_WEIGHT = {0: 1, 1: 6, 2: 3}
 PREDICTIONS_OUTPUT_PATH = "../../covis-predictions.csv"
-
+TIME_MS_24_HRS = 24 * 60 * 60
 TOP_N = 20
-
-CLICKS_COVIS_FILE_PREFIX = "test/resources/covis/clicks"
-CARTS_TO_ORDERS_COVIS_FILE_PREFIX = "test/resources/covis/carts_to_orders"
-BUY_TO_BUY_COVIS_FILE_PREFIX = "test/resources/covis/buy_to_buy"
+MAX_DISK_SIZE = 2000000
+CLICKS_COVIS_FILE_PREFIX = "../test/resources/covis/clicks"
+CARTS_TO_ORDERS_COVIS_FILE_PREFIX = "../test/resources/covis/carts_to_orders"
+BUY_TO_BUY_COVIS_FILE_PREFIX = "../test/resources/covis/buy_to_buy"
 
 TS_BEGIN = 1659304800
 TS_END = 1662328791
@@ -65,9 +65,6 @@ for f in files:
 
 READ_CT = 5
 CHUNK = int(np.ceil(len(files) / 6))
-print(
-    f"We will process {len(files)} files, in groups of {READ_CT} and chunks of {CHUNK}."
-)
 
 
 def pqt_to_dict(dataframe):
