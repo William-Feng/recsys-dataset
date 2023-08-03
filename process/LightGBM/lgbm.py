@@ -1,5 +1,5 @@
 """
-This module is used to run the Light Gradient Booking Model on the dataset.
+This module is used to run the Light Gradient Boosting Model on the dataset.
 """
 
 

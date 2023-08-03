@@ -31,7 +31,7 @@ def read_file(f):
     """
     Reads the DataFrame from the cache.
 
-    Args:
+    Params:
         f (str): file path to be read from the cache.
 
     Returns:
@@ -45,7 +45,7 @@ def read_file_to_cache(f):
     """
     Reads parquet file, performs necessary transformations and adds it to the cache.
 
-    Args:
+    Params:
         f (str): file path of the parquet file.
 
     Returns:
@@ -71,7 +71,7 @@ def pqt_to_dict(dataframe):
     """
     Converts DataFrame to nested dictionary based on groupby.
 
-    Args:
+    Params:
     dataframe (pandas.DataFrame): Input DataFrame with 'aid_x' and 'aid_y' columns.
 
     Returns:
@@ -88,7 +88,7 @@ def get_covis_matrices_df(NUM_SECTION=4):
     Loads co-visit matrix data files, concatenates them and returns a dictionary
     with key as file type and value as corresponding DataFrame.
 
-    Args:
+    Params:
         NUM_SECTION (int): Number of sections to read for each type of co-visit matrix. Default is 4.
 
     Returns:
@@ -127,7 +127,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
     Loads co-visit matrix data files, converts them to dictionary
     and returns a dictionary with key as file type and value as corresponding dict.
 
-    Args:
+    Params:
         NUM_SECTION (int): Number of sections to read for each type of co-visit matrix. Default is 4.
 
     Returns:

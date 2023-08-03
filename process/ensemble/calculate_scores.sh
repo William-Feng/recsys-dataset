@@ -2,8 +2,9 @@
 
 # This script will calculate the score of all the generated prediction files and store them in output.log
 
-# The weights TODO for EDA, Covisitation Matrices, Word2Vec, XGBoost respectively is best
-# This gave the highest recall@20 score of TODO
+# The weights [0.80, 0.35, 0.30, 0.55] for Word2Vec, Re-ranker, EDA, XGBoost respectively is best.
+# Note that the weights normalised is [0.40, 0.175, 0.15, 0.275].
+# This gave the highest recall@20 score of 0.92643 and a Kaggle private score of 0.89638.
 
 
 # Run this file from the src directory

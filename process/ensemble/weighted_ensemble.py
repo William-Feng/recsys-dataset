@@ -1,14 +1,15 @@
 """
-This module is used to combine the predictions from the 4 models using weighted ensemble.
-These 4 prediction files came from:
+This module is used to combine the predictions from the 5 models using weighted average ensemble.
+These 5 prediction files came from:
+- Word2Vec Model
+- Re-ranker Model
 - Exploratory Data Analysis (EDA)
-- Covisitation Matrix
-- Word2Vec
-- XGBoost
+- XGBoost Model
+- LightGBM Model (Not used in final submission after LOCCV)
 
 This file was used to create a series of submissions with different weights to determine the best combination.
 
-The final weights used in the submission were: # TODO: Add weights once they are determined from script
+The final normalised weights used in the submission were: [0.40, 0.175, 0.15, 0.275]
 """
 
 
