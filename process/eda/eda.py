@@ -7,7 +7,7 @@ import pandas as pd
 from pathlib import Path
 
 
-PATH = Path('../../test/resources')
+PATH = Path("../../test/resources")
 
 
 def build_event_df_from_chunks(chunk):
@@ -21,14 +21,14 @@ def build_event_df_from_chunks(chunk):
         DataFrame: Event data.
     """
 
-    event_dict = {'session': [], 'aid': [], 'ts': [], 'type': []}
+    event_dict = {"session": [], "aid": [], "ts": [], "type": []}
 
-    for session, events in zip(chunk['session'].tolist(), chunk['events'].tolist()):
+    for session, events in zip(chunk["session"].tolist(), chunk["events"].tolist()):
         for event in events:
-            event_dict['session'].append(session)
-            event_dict['aid'].append(event['aid'])
-            event_dict['ts'].append(event['ts'])
-            event_dict['type'].append(event['type'])
+            event_dict["session"].append(session)
+            event_dict["aid"].append(event["aid"])
+            event_dict["ts"].append(event["ts"])
+            event_dict["type"].append(event["type"])
 
     return pd.DataFrame(event_dict)
 
@@ -67,13 +67,18 @@ def get_best_sold_list(df, top_n=20):
         str: Concatenated list of top sold item aids.
     """
 
-    order_num_df = (df.groupby(['type', 'aid'])['session'].agg('count').reset_index()
-                    .rename(columns={'session': 'count'}))
-    order_num_df = order_num_df[order_num_df['type'] == 'orders']
-    order_num_df = order_num_df.sort_values(
-        ['count'], ascending=False).reset_index(drop=True)
+    order_num_df = (
+        df.groupby(["type", "aid"])["session"]
+        .agg("count")
+        .reset_index()
+        .rename(columns={"session": "count"})
+    )
+    order_num_df = order_num_df[order_num_df["type"] == "orders"]
+    order_num_df = order_num_df.sort_values(["count"], ascending=False).reset_index(
+        drop=True
+    )
 
-    return ' ' + order_num_df[:top_n].aid.astype('str').sum()
+    return " " + order_num_df[:top_n].aid.astype("str").sum()
 
 
 def get_recommended(df, action_type):
@@ -89,7 +94,7 @@ def get_recommended(df, action_type):
     """
 
     df = df[df["type"] == action_type].copy()
-    df['type'] = action_type
+    df["type"] = action_type
 
     return df
 
@@ -104,14 +109,15 @@ def create_submission(recommend_df, best_sold_list, data_path):
         data_path (Path): Path to the sample submission file.
     """
 
-    sample_sub = pd.read_csv(data_path / 'sample_submission.csv')
-    sample_sub = pd.merge(sample_sub, recommend_df[[
-                          "session_type", "aid"]], on="session_type", how="left")
-    sample_sub['next'] = sample_sub['aid'].fillna('') + best_sold_list
-    sample_sub['next'] = sample_sub['next'].str.strip()
+    sample_sub = pd.read_csv(data_path / "sample_submission.csv")
+    sample_sub = pd.merge(
+        sample_sub, recommend_df[["session_type", "aid"]], on="session_type", how="left"
+    )
+    sample_sub["next"] = sample_sub["aid"].fillna("") + best_sold_list
+    sample_sub["next"] = sample_sub["next"].str.strip()
     sample_sub.drop(["labels", "aid"], axis=1, inplace=True)
     sample_sub.columns = ("session_type", "labels")
-    sample_sub.to_csv('predictions.csv', index=False)
+    sample_sub.to_csv("predictions.csv", index=False)
 
 
 def main():
@@ -121,33 +127,33 @@ def main():
 
     pd.set_option("display.max_columns", None)
 
-    train_df = load_data(PATH / 'otto-recsys-train.jsonl')
-    train_df["minutes"] = train_df.groupby(
-        "session")["ts"].diff(-1)*(-1 / 1000 / 60)
+    train_df = load_data(PATH / "otto-recsys-train.jsonl")
+    train_df["minutes"] = train_df.groupby("session")["ts"].diff(-1) * (-1 / 1000 / 60)
     best_sold_list = get_best_sold_list(train_df)
 
-    test_df = load_data(PATH / 'otto-recsys-test.jsonl')
-    test_df["minutes"] = test_df.groupby(
-        "session")["ts"].diff(-1) * (-1 / 1000 / 60)
+    test_df = load_data(PATH / "otto-recsys-test.jsonl")
+    test_df["minutes"] = test_df.groupby("session")["ts"].diff(-1) * (-1 / 1000 / 60)
 
     test_action_df = test_df.copy()
-    test_action_df['aid'] = ' ' + test_df['aid'].astype('str')
-    test_action_df = test_action_df.groupby(['session', 'type'])[
-        'aid'].sum().reset_index()
+    test_action_df["aid"] = " " + test_df["aid"].astype("str")
+    test_action_df = (
+        test_action_df.groupby(["session", "type"])["aid"].sum().reset_index()
+    )
 
-    next_clicks_df = get_recommended(test_action_df, 'clicks')
-    next_orders_df = get_recommended(test_action_df, 'carts')
-    next_orders_df = pd.merge(next_orders_df, next_clicks_df[[
-                              'session', 'aid']], on='session', how='left')
+    next_clicks_df = get_recommended(test_action_df, "clicks")
+    next_orders_df = get_recommended(test_action_df, "carts")
+    next_orders_df = pd.merge(
+        next_orders_df, next_clicks_df[["session", "aid"]], on="session", how="left"
+    )
     next_orders_df["aid"] = next_orders_df["aid_x"] + next_orders_df["aid_y"]
-    next_orders_df.drop(['aid_x', 'aid_y'], axis=1, inplace=True)
+    next_orders_df.drop(["aid_x", "aid_y"], axis=1, inplace=True)
 
-    next_carts_df = get_recommended(test_action_df, 'clicks')
+    next_carts_df = get_recommended(test_action_df, "clicks")
 
-    recommend_df = pd.concat(
-        [next_orders_df, next_carts_df, next_clicks_df], axis=0)
-    recommend_df["session_type"] = recommend_df["session"].astype(
-        'str') + "_" + recommend_df["type"]
+    recommend_df = pd.concat([next_orders_df, next_carts_df, next_clicks_df], axis=0)
+    recommend_df["session_type"] = (
+        recommend_df["session"].astype("str") + "_" + recommend_df["type"]
+    )
 
     create_submission(recommend_df, best_sold_list, PATH)
 

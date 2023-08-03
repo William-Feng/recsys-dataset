@@ -37,9 +37,7 @@ def clicks_covis(NUM_SECTIONS=4, TOTAL_SIZE=MAX_DISK_SIZE / 4):
 
     def get_matrix(dataframe):
         dataframe = pd.concat(dataframe, ignore_index=True, axis=0)
-        dataframe = dataframe.sort_values(
-            ["session", "ts"], ascending=[True, False]
-        )
+        dataframe = dataframe.sort_values(["session", "ts"], ascending=[True, False])
 
         dataframe = dataframe.reset_index(drop=True)
         dataframe["n"] = dataframe.groupby("session").cumcount()
@@ -56,12 +54,10 @@ def clicks_covis(NUM_SECTIONS=4, TOTAL_SIZE=MAX_DISK_SIZE / 4):
             & (dataframe.aid_x < (PART + 1) * TOTAL_SIZE)
         ]
 
-        dataframe = dataframe[
-            ["session", "aid_x", "aid_y", "ts_x"]
-        ].drop_duplicates(["session", "aid_x", "aid_y"])
-        dataframe["wgt"] = 1 + 3 * (dataframe.ts_x - TS_BEGIN) / (
-            TS_END - TS_BEGIN
+        dataframe = dataframe[["session", "aid_x", "aid_y", "ts_x"]].drop_duplicates(
+            ["session", "aid_x", "aid_y"]
         )
+        dataframe["wgt"] = 1 + 3 * (dataframe.ts_x - TS_BEGIN) / (TS_END - TS_BEGIN)
         dataframe = dataframe[["aid_x", "aid_y", "wgt"]]
         dataframe.wgt = dataframe.wgt.astype("float32")
         dataframe = dataframe.groupby(["aid_x", "aid_y"]).wgt.sum()
@@ -79,17 +75,29 @@ def clicks_covis(NUM_SECTIONS=4, TOTAL_SIZE=MAX_DISK_SIZE / 4):
                         dataframe.append(read_file(files[disk_size + i]))
                 dataframe = get_matrix(dataframe)
 
-                curr_dataframe = dataframe if disk_size == total_chunks else  curr_dataframe.add(dataframe, fill_value=0)
-            new_curr_dataframe = curr_dataframe if total_chunks == 0 else new_curr_dataframe.add(curr_dataframe, fill_value=0)
+                curr_dataframe = (
+                    dataframe
+                    if disk_size == total_chunks
+                    else curr_dataframe.add(dataframe, fill_value=0)
+                )
+            new_curr_dataframe = (
+                curr_dataframe
+                if total_chunks == 0
+                else new_curr_dataframe.add(curr_dataframe, fill_value=0)
+            )
             del curr_dataframe, dataframe
             gc.collect()
 
         new_curr_dataframe = new_curr_dataframe.reset_index()
-        new_curr_dataframe = new_curr_dataframe.sort_values(["aid_x", "wgt"], ascending=[True, False])
+        new_curr_dataframe = new_curr_dataframe.sort_values(
+            ["aid_x", "wgt"], ascending=[True, False]
+        )
 
         new_curr_dataframe = new_curr_dataframe.reset_index(drop=True)
         new_curr_dataframe["n"] = new_curr_dataframe.groupby("aid_x").aid_y.cumcount()
-        new_curr_dataframe = new_curr_dataframe.loc[new_curr_dataframe.n < 20].drop("n", axis=1)
+        new_curr_dataframe = new_curr_dataframe.loc[new_curr_dataframe.n < 20].drop(
+            "n", axis=1
+        )
         new_curr_dataframe.to_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_{PART}.pqt")
 
 
@@ -111,9 +119,7 @@ def carts_to_orders_covis(NUM_SECTIONS=4, TOTAL_SIZE=MAX_DISK_SIZE / 4):
 
     def get_matrix(dataframe):
         dataframe = pd.concat(dataframe, ignore_index=True, axis=0)
-        dataframe = dataframe.sort_values(
-            ["session", "ts"], ascending=[True, False]
-        )
+        dataframe = dataframe.sort_values(["session", "ts"], ascending=[True, False])
 
         dataframe = dataframe.reset_index(drop=True)
         dataframe["n"] = dataframe.groupby("session").cumcount()
@@ -130,9 +136,9 @@ def carts_to_orders_covis(NUM_SECTIONS=4, TOTAL_SIZE=MAX_DISK_SIZE / 4):
             & (dataframe.aid_x < (PART + 1) * TOTAL_SIZE)
         ]
 
-        dataframe = dataframe[
-            ["session", "aid_x", "aid_y", "type_y"]
-        ].drop_duplicates(["session", "aid_x", "aid_y"])
+        dataframe = dataframe[["session", "aid_x", "aid_y", "type_y"]].drop_duplicates(
+            ["session", "aid_x", "aid_y"]
+        )
         dataframe["wgt"] = dataframe.type_y.map(TYPE_WEIGHT)
         dataframe = dataframe[["aid_x", "aid_y", "wgt"]]
         dataframe.wgt = dataframe.wgt.astype("float32")
@@ -152,17 +158,29 @@ def carts_to_orders_covis(NUM_SECTIONS=4, TOTAL_SIZE=MAX_DISK_SIZE / 4):
                         dataframe.append(read_file(files[disk_size + i]))
                 dataframe = get_matrix(dataframe)
 
-                curr_dataframe = dataframe if disk_size == total_chunks else  curr_dataframe.add(dataframe, fill_value=0)
-            new_curr_dataframe = curr_dataframe if total_chunks == 0 else new_curr_dataframe.add(curr_dataframe, fill_value=0)
+                curr_dataframe = (
+                    dataframe
+                    if disk_size == total_chunks
+                    else curr_dataframe.add(dataframe, fill_value=0)
+                )
+            new_curr_dataframe = (
+                curr_dataframe
+                if total_chunks == 0
+                else new_curr_dataframe.add(curr_dataframe, fill_value=0)
+            )
             del curr_dataframe, dataframe
             gc.collect()
 
         new_curr_dataframe = new_curr_dataframe.reset_index()
-        new_curr_dataframe = new_curr_dataframe.sort_values(["aid_x", "wgt"], ascending=[True, False])
+        new_curr_dataframe = new_curr_dataframe.sort_values(
+            ["aid_x", "wgt"], ascending=[True, False]
+        )
 
         new_curr_dataframe = new_curr_dataframe.reset_index(drop=True)
         new_curr_dataframe["n"] = new_curr_dataframe.groupby("aid_x").aid_y.cumcount()
-        new_curr_dataframe = new_curr_dataframe.loc[new_curr_dataframe.n < 15].drop("n", axis=1)
+        new_curr_dataframe = new_curr_dataframe.loc[new_curr_dataframe.n < 15].drop(
+            "n", axis=1
+        )
 
         new_curr_dataframe.to_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{PART}.pqt")
 
@@ -195,9 +213,7 @@ def buy_to_buy_covis(NUM_SECTIONS=1, TOTAL_SIZE=MAX_DISK_SIZE):
     def get_matrix(dataframe):
         dataframe = pd.concat(dataframe, ignore_index=True, axis=0)
         dataframe = dataframe.loc[dataframe["type"].isin([1, 2])]
-        dataframe = dataframe.sort_values(
-            ["session", "ts"], ascending=[True, False]
-        )
+        dataframe = dataframe.sort_values(["session", "ts"], ascending=[True, False])
 
         dataframe = dataframe.reset_index(drop=True)
         dataframe["n"] = dataframe.groupby("session").cumcount()
@@ -214,14 +230,14 @@ def buy_to_buy_covis(NUM_SECTIONS=1, TOTAL_SIZE=MAX_DISK_SIZE):
             & (dataframe.aid_x < (PART + 1) * TOTAL_SIZE)
         ]
 
-        dataframe = dataframe[
-            ["session", "aid_x", "aid_y", "type_y"]
-        ].drop_duplicates(["session", "aid_x", "aid_y"])
+        dataframe = dataframe[["session", "aid_x", "aid_y", "type_y"]].drop_duplicates(
+            ["session", "aid_x", "aid_y"]
+        )
         dataframe["wgt"] = 1
         dataframe = dataframe[["aid_x", "aid_y", "wgt"]]
         dataframe.wgt = dataframe.wgt.astype("float32")
         dataframe = dataframe.groupby(["aid_x", "aid_y"]).wgt.sum()
-        
+
         return dataframe
 
     for PART in range(NUM_SECTIONS):
@@ -236,17 +252,29 @@ def buy_to_buy_covis(NUM_SECTIONS=1, TOTAL_SIZE=MAX_DISK_SIZE):
                         dataframe.append(read_file(files[disk_size + i]))
                 dataframe = get_matrix(dataframe)
 
-                curr_dataframe = dataframe if disk_size == total_chunks else  curr_dataframe.add(dataframe, fill_value=0)
-            new_curr_dataframe = curr_dataframe if total_chunks == 0 else new_curr_dataframe.add(curr_dataframe, fill_value=0)
+                curr_dataframe = (
+                    dataframe
+                    if disk_size == total_chunks
+                    else curr_dataframe.add(dataframe, fill_value=0)
+                )
+            new_curr_dataframe = (
+                curr_dataframe
+                if total_chunks == 0
+                else new_curr_dataframe.add(curr_dataframe, fill_value=0)
+            )
             del curr_dataframe, dataframe
             gc.collect()
 
         new_curr_dataframe = new_curr_dataframe.reset_index()
-        new_curr_dataframe = new_curr_dataframe.sort_values(["aid_x", "wgt"], ascending=[True, False])
+        new_curr_dataframe = new_curr_dataframe.sort_values(
+            ["aid_x", "wgt"], ascending=[True, False]
+        )
 
         new_curr_dataframe = new_curr_dataframe.reset_index(drop=True)
         new_curr_dataframe["n"] = new_curr_dataframe.groupby("aid_x").aid_y.cumcount()
-        new_curr_dataframe = new_curr_dataframe.loc[new_curr_dataframe.n < 15].drop("n", axis=1)
+        new_curr_dataframe = new_curr_dataframe.loc[new_curr_dataframe.n < 15].drop(
+            "n", axis=1
+        )
 
         new_curr_dataframe.to_parquet(f"{BUY_TO_BUY_COVIS_FILE_PREFIX}_{PART}.pqt")
 

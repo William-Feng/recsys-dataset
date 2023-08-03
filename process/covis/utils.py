@@ -98,25 +98,25 @@ def get_covis_matrices_df(NUM_SECTION=4):
     clicks_covis = [pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt")]
 
     for k in range(1, NUM_SECTION):
-        clicks_covis.append(pd.read_parquet(
-            f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
+        clicks_covis.append(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
 
     clicks_covis = pd.concat(clicks_covis)
 
-    carts_to_orders_covis = [pd.read_parquet(
-        f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_0.pqt")]
+    carts_to_orders_covis = [
+        pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_0.pqt")
+    ]
     for k in range(1, NUM_SECTION):
-        carts_to_orders_covis.append(pd.read_parquet(
-            f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
+        carts_to_orders_covis.append(
+            pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt")
+        )
     carts_to_orders_covis = pd.concat(carts_to_orders_covis)
 
-    buy_to_buy_covis = [pd.read_parquet(
-        f"{BUY_TO_BUY_COVIS_FILE_PREFIX}_0.pqt")]
+    buy_to_buy_covis = [pd.read_parquet(f"{BUY_TO_BUY_COVIS_FILE_PREFIX}_0.pqt")]
 
     return {
-        'clicks_covis': clicks_covis,
-        'carts_to_orders_covis': carts_to_orders_covis,
-        'buy_to_buy_covis': buy_to_buy_covis,
+        "clicks_covis": clicks_covis,
+        "carts_to_orders_covis": carts_to_orders_covis,
+        "buy_to_buy_covis": buy_to_buy_covis,
     }
 
 
@@ -134,8 +134,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
         dict: Dictionary with keys as file type and values as corresponding dict.
     """
 
-    clicks_covis = pqt_to_dict(pd.read_parquet(
-        f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt"))
+    clicks_covis = pqt_to_dict(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_0.pqt"))
     for k in range(1, NUM_SECTION):
         clicks_covis.update(
             pqt_to_dict(pd.read_parquet(f"{CLICKS_COVIS_FILE_PREFIX}_{k}.pqt"))
@@ -146,8 +145,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
     )
     for k in range(1, NUM_SECTION):
         carts_to_orders_covis.update(
-            pqt_to_dict(pd.read_parquet(
-                f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
+            pqt_to_dict(pd.read_parquet(f"{CARTS_TO_ORDERS_COVIS_FILE_PREFIX}_{k}.pqt"))
         )
 
     buy_to_buy_covis = pqt_to_dict(
@@ -155,7 +153,7 @@ def get_covis_matrices_dict(NUM_SECTION=4):
     )
 
     return {
-        'clicks_covis': clicks_covis,
-        'carts_to_orders_covis': carts_to_orders_covis,
-        'buy_to_buy_covis': buy_to_buy_covis,
+        "clicks_covis": clicks_covis,
+        "carts_to_orders_covis": carts_to_orders_covis,
+        "buy_to_buy_covis": buy_to_buy_covis,
     }

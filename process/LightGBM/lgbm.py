@@ -77,7 +77,10 @@ def sessesion_len(df):
     - DataFrame: A new DataFrame with an additional column "session_duration" that contains the length of each session.
     """
     return df.select(
-        [pl.col("*"), pl.col("session").count().over("session").alias("session_duration")]
+        [
+            pl.col("*"),
+            pl.col("session").count().over("session").alias("session_duration"),
+        ]
     )
 
 
@@ -100,8 +103,7 @@ def session_recency_factor(df):
         df["session_duration"] - df["event_type_rev"] - 1
     )
     return df.with_columns(
-        pl.Series(2 ** linear_interpolation -
-                  1).alias("session_recency_factor")
+        pl.Series(2 ** linear_interpolation - 1).alias("session_recency_factor")
     ).fill_nan(1)
 
 
@@ -121,12 +123,10 @@ def session_recency_factor_weighted(df):
                  natural logarithm recency score for each row.
     """
     weighted_session_recency_factor = pl.Series(
-        df["session_recency_factor"] /
-        df["type"].apply(lambda x: TYPE_WEIGHTING[x])
+        df["session_recency_factor"] / df["type"].apply(lambda x: TYPE_WEIGHTING[x])
     )
     return df.with_columns(
-        weighted_session_recency_factor.alias(
-            "weighted_session_recency_factor")
+        weighted_session_recency_factor.alias("weighted_session_recency_factor")
     )
 
 
@@ -183,9 +183,7 @@ def load_test_files():
     for e, chunk_file in enumerate(glob.glob(TEST_PATH)):
         chunk = pd.read_parquet(chunk_file)
         chunk.ts = (chunk.ts / 1000).astype("int32")
-        chunk["type"] = (
-            chunk["type"].map(TYPE_WEIGHTING_STR).astype("int8")
-        )
+        chunk["type"] = chunk["type"].map(TYPE_WEIGHTING_STR).astype("int8")
         dfs.append(chunk)
     return pl.from_pandas(pd.concat(dfs).reset_index(drop=True))
 
@@ -199,8 +197,12 @@ def main():
     the submission file.
     """
 
-    pipeline = [event_type_rev, sessesion_len,
-                session_recency_factor, session_recency_factor_weighted]
+    pipeline = [
+        event_type_rev,
+        sessesion_len,
+        session_recency_factor,
+        session_recency_factor_weighted,
+    ]
     train = apply(training_data, pipeline)
 
     train_labels = training_labels_data.explode("ground_truth").with_columns(
@@ -251,16 +253,14 @@ def main():
     )
 
     for session, preds in zip(
-        test_predictions["session"].to_numpy(
-        ), test_predictions["aid"].to_numpy()
+        test_predictions["session"].to_numpy(), test_predictions["aid"].to_numpy()
     ):
         l = " ".join(str(p) for p in preds)
         for session_type in ["clicks", "carts", "orders"]:
             labels.append(l)
             session_types.append(f"{session}_{session_type}")
 
-    submission = pl.DataFrame(
-        {"session_type": session_types, "labels": labels})
+    submission = pl.DataFrame({"session_type": session_types, "labels": labels})
     submission.write_csv("lgbm_predictions.csv")
 
 

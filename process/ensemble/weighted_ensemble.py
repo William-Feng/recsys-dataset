@@ -19,9 +19,13 @@ import numpy as np
 import pandas as pd
 
 
-PATH = '../../ensemble-submissions'
-file_names = [f'{PATH}/eda_predictions.csv', f'{PATH}/covis_predictions.csv',
-              f'{PATH}/w2v_predictions.csv', f'{PATH}/xgb_predictions.csv']
+PATH = "../../ensemble-submissions"
+file_names = [
+    f"{PATH}/eda_predictions.csv",
+    f"{PATH}/covis_predictions.csv",
+    f"{PATH}/w2v_predictions.csv",
+    f"{PATH}/xgb_predictions.csv",
+]
 
 
 def get_weights():
@@ -49,7 +53,7 @@ def read_file(file_name):
     """
 
     df = pd.read_csv(file_name)
-    df['labels'] = df['labels'].apply(lambda x: list(map(int, str(x).split())))
+    df["labels"] = df["labels"].apply(lambda x: list(map(int, str(x).split())))
     return df
 
 
@@ -95,19 +99,24 @@ def main():
     for weights in get_weights():
         dfs = [read_file(file_name) for file_name in file_names]
         combined_df = dfs[0].copy()
-        combined_df['labels'] = list(map(combine_labels, zip(
-            *[df['labels'] for df in dfs]), [weights]*len(dfs[0])))
+        combined_df["labels"] = list(
+            map(
+                combine_labels,
+                zip(*[df["labels"] for df in dfs]),
+                [weights] * len(dfs[0]),
+            )
+        )
 
-        combined_df['labels'] = combined_df['labels'].apply(
-            lambda x: ' '.join(map(str, x)))
+        combined_df["labels"] = combined_df["labels"].apply(
+            lambda x: " ".join(map(str, x))
+        )
 
         formatted_weights = [f"{weight:.2f}" for weight in weights]
         prediction_file = "_".join(formatted_weights) + ".csv"
-        combined_df.to_csv(
-            "predictions/" + prediction_file, index=False)
+        combined_df.to_csv("predictions/" + prediction_file, index=False)
 
-        print(f'Processed {prediction_file}')
+        print(f"Processed {prediction_file}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
