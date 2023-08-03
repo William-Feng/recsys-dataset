@@ -33,8 +33,8 @@ lgbm_ranker = LGBMRanker(
     importance_type="gain",
 )
 
-train = pl.read_parquet(TRAIN_PATH)
-train_labels = pl.read_parquet(TEST_LABEL_PATH)
+training_data = pl.read_parquet(TRAIN_PATH)
+training_labels_data = pl.read_parquet(TEST_LABEL_PATH)
 
 
 def event_type_rev(df):
@@ -201,9 +201,9 @@ def main():
 
     pipeline = [event_type_rev, sessesion_len,
                 session_recency_factor, session_recency_factor_weighted]
-    train = apply(train, pipeline)
+    train = apply(training_data, pipeline)
 
-    train_labels = train_labels.explode("ground_truth").with_columns(
+    train_labels = training_labels_data.explode("ground_truth").with_columns(
         [
             pl.col("ground_truth").alias("aid"),
             pl.col("type").apply(lambda x: TYPE_WEIGHTING_STR[x]),
@@ -225,7 +225,7 @@ def main():
 
     session_durations_train = get_session_durations(train)
 
-    lgbm_ranker = lgbm_ranker.fit(
+    lgbm = lgbm_ranker.fit(
         train[PREDICTOR_VARS].to_pandas(),
         train[RESPONSE_VAR].to_pandas(),
         group=session_durations_train,
@@ -236,7 +236,7 @@ def main():
 
     test = load_test_files()
     test = apply(test, pipeline)
-    scores = lgbm_ranker.predict(test[PREDICTOR_VARS].to_pandas())
+    scores = lgbm.predict(test[PREDICTOR_VARS].to_pandas())
     test = test.with_columns(pl.Series(name="score", values=scores))
     test_predictions = test.sort(by=["session", "score"], descending=True)[
         ["session", "aid"]
@@ -261,7 +261,7 @@ def main():
 
     submission = pl.DataFrame(
         {"session_type": session_types, "labels": labels})
-    submission.write_csv("submission.csv")
+    submission.write_csv("lgbm_predictions.csv")
 
 
 if __name__ == "__main__":
