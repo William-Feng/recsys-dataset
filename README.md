@@ -312,12 +312,19 @@ This Kaggle competition was completed by a group of 3 students for the COMP9417 
 - Asha Raghav (z5363204)
 - Prayag Rawat (z5312819)
 
-## Summary/Notes
+## Gathering Datasets
 
-- The **`test/resources/`** directory contains all the data files used for the project.
-  - In the GitHub repository, you will only find a `train.jsonl` file, which simply contains the first 10 and last 10 lines of the full training data.
-  - To properly run all the models, you will need to insert the [partialOTTO dataset](https://www.kaggle.com/competitions/otto-recommender-system/data) here, as well as any [parquet files](https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet) that may be used in the data processing.
-  - These files are not included in the GitHub repository due to their large size.
+- The **`test/resources/`** directory should contain all the data files used for the project.
+  - In the GitHub repository, you will only find a `train.jsonl` file, which simply contains the first 10 and last 10 lines of the full training data. These are not enough to run the models.
+  - Instead, you will need to insert the [partialOTTO dataset](https://www.kaggle.com/competitions/otto-recommender-system/data), as well as any [parquet files](https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet) that may be used during data processing.
+    - These files are not included in the GitHub repository due to their large size.
+    - The final directory at `test/resources/*` should therefore include:
+        - `train_parquet` folder with 129 files
+        - `test_parquet` folder witih 17 files
+        - [`test_labels.parquet`](https://drive.google.com/file/d/1MxKWZx6gQtoRDOd02JXeyEfWnrElkD8D/view) file 
+        - [`train.parquet`](https://drive.google.com/file/d/1qcieOhMvIXOzgpyeb7V49QhhL3Epfu7l/view) file
+        - [`test.parquet`](https://drive.google.com/file/d/1CaqhELva0zadUkbCt-77209RRR_kfwzw/view) file
+        
 - The **`src/`** directory contains contains all the code for generating the 'ground truth' labels used for testing.
   - The specific commands to run the starter Python files are explained in the section below for clarity.
   - Please note that the output of running the test labels (which our generated models will be comparing against) will be generated in the `src/out/` directory.
@@ -327,8 +334,7 @@ This Kaggle competition was completed by a group of 3 students for the COMP9417 
 
 ## Running Models & Calculating Score
 
-1. [Download](https://www.kaggle.com/competitions/otto-recommender-system/data) and place these files in the `test/resources/` directory
-
+1. Ensure that the [`jsonl` dataset files](https://www.kaggle.com/competitions/otto-recommender-system/data) already exist in the `test/resources/` directory
    - `otto-recsys-test.jsonl` (402MB)
    - `otto-recsys-train.jsonl` (11.31GB)
 
@@ -338,9 +344,17 @@ This Kaggle competition was completed by a group of 3 students for the COMP9417 
 pipenv run python -m testset --train-set ../test/resources/otto-recsys-test.jsonl --days 2 --output-path 'out/' --seed 42
 ```
 
-3. Run your model and generate a `predictions.csv` file (placed in the `process/` directory)
+3. Run your model by navigating to the relevant model under `process/<model_name>` and generate a `predictions.csv` file (placed in the `process/` directory)
+    - For example, to run the ensemble model execute the following:
+    ```shell
+        cd process/ensemble
+        python weighted_ensemble.py
+    ```
+    - After the model has finished running, it will generate a `predictions.csv` file
+    - An example of this file for our final ensemble model is available at [this link](https://drive.google.com/file/d/1H7nt03or6s07HdD47nB4Ey5h7_wStvwH/view?usp=drive_link)
+    - This model generates a private score of `0.89638`
 
-4. Evaluate your model (from the `src/` directory)
+4. Evaluate your model (from the `src/` directory), specifying the location of the output predictions file. Note that the predictions file may be named differently for different models e.g. (`lgbm-predictions.csv`) for the LightGBM model
 
 ```shell
 pipenv run python -m evaluate --test-labels out/test_labels.jsonl --predictions ../process/predictions.csv
