@@ -12,7 +12,7 @@ TRAIN_PATH = "../../test/resources/train_parquet/*"
 TEST_PATH = "../../test/resources/test_parquet/*"
 TYPE_LABELS = {"clicks": 0, "carts": 1, "orders": 2}
 TYPE_WEIGHT = {0: 1, 1: 6, 2: 3}
-PREDICTIONS_OUTPUT_PATH = "predictions.csv"
+PREDICTIONS_OUTPUT_PATH = "../../lgbm-predictions.csv"
 
 TOP_N = 20
 
