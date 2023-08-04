@@ -8,6 +8,8 @@ import pandas as pd
 import polars as pl
 from lightgbm.sklearn import LGBMRanker
 
+from utils import PREDICTIONS_OUTPUT_PATH
+
 TRAIN_PATH = "../../test/resources/test.parquet"
 TEST_PATH = "../../test/resources/test_parquet/*"
 TEST_LABEL_PATH = "../../test/resources/test_labels.parquet"
@@ -261,7 +263,7 @@ def main():
             session_types.append(f"{session}_{session_type}")
 
     submission = pl.DataFrame({"session_type": session_types, "labels": labels})
-    submission.write_csv("lgbm_predictions.csv")
+    submission.write_csv(PREDICTIONS_OUTPUT_PATH)
 
 
 if __name__ == "__main__":

@@ -316,7 +316,7 @@ This Kaggle competition was completed by a group of 3 students for the COMP9417 
 
 - The **`test/resources/`** directory should contain all the data files used for the project.
   - In the GitHub repository, you will only find a `train.jsonl` file, which simply contains the first 10 and last 10 lines of the full training data. These are not enough to run the models.
-  - Instead, you will need to insert the [partialOTTO dataset](https://www.kaggle.com/competitions/otto-recommender-system/data), as well as any [parquet files](https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet) that may be used during data processing.
+  - Instead, you will need to insert the [partial OTTO dataset](https://www.kaggle.com/competitions/otto-recommender-system/data), as well as any [parquet files](https://www.kaggle.com/datasets/columbia2131/otto-chunk-data-inparquet-format?select=test_parquet) that may be used during data processing.
     - These files are not included in the GitHub repository due to their large size.
     - The final directory at `test/resources/*` should therefore include:
         - `train_parquet` folder with 129 files
